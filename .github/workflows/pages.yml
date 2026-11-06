@@ -1,0 +1,55 @@
+name: Publish teaching site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/configure-pages@v5
+      - name: Build static pages and stamp release time
+        run: |
+          python3 - <<'PY'
+          from datetime import datetime, timedelta, timezone
+          from pathlib import Path
+          from shutil import copytree
+
+          built_at = datetime.now(timezone(timedelta(hours=8)))
+          display = built_at.strftime("%Y-%m-%d %H:%M Asia/Taipei")
+          copytree("site", "_site")
+          for page in Path("_site").rglob("*.html"):
+              html = page.read_text(encoding="utf-8")
+              for marker, value in {
+                  "__PAGES_BUILD_TIME__": display,
+                  "__PAGES_BUILD_DATETIME__": built_at.isoformat(timespec="seconds"),
+                  "__PAGES_BUILD_YEAR__": str(built_at.year),
+              }.items():
+                  if html.count(marker) != 1:
+                      raise SystemExit(f"{page}: expected exactly one {marker}")
+                  html = html.replace(marker, value)
+              page.write_text(html, encoding="utf-8")
+          print(f"Pages build time: {display}")
+          PY
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - uses: actions/deploy-pages@v4
+        id: deployment

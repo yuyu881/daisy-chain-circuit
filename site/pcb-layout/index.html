@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>菊鍊串接電路｜PCB Layout 互動檢視器</title>
+<style>
+  :root {
+    color-scheme: light;
+    --purple: #5a2d82;
+    --purple-deep: #3a1a5c;
+    --purple-soft: #f5f0fc;
+    --purple-selected: #ede0ff;
+    --paper: #f0f2f5;
+    --surface: #fff;
+    --ink: #333;
+    --muted: #62626c;
+    --line: #e0d0f0;
+    --control-line: #8d73a8;
+    --warning: #932531;
+    font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; color: var(--ink); background: var(--paper); line-height: 1.5; }
+  h1, h2, h3, p { margin: 0; }
+  button, input { font: inherit; }
+  button {
+    min-height: 32px; padding: 3px 9px;
+    border: 1px solid var(--control-line); border-radius: 7px;
+    color: var(--purple); background: var(--surface); font-size: .9rem; cursor: pointer;
+  }
+  button:hover:not(:disabled) { background: var(--purple-soft); }
+  button[aria-pressed="true"] { background: var(--purple-selected); border-color: var(--purple); font-weight: 700; }
+  button:disabled { opacity: .55; cursor: default; }
+  :focus-visible { outline: 3px solid var(--purple); outline-offset: 2px; }
+  .frame { width: calc(100% - 24px); margin-inline: auto; }
+  .topbar { position: sticky; top: 0; z-index: 3; background: linear-gradient(110deg, var(--purple-deep), var(--purple)); color: #fff; }
+  .masthead { display: flex; align-items: center; justify-content: space-between; gap: 6px 16px; min-height: 58px; padding-block: 5px; }
+  .masthead h1 { font-size: clamp(1.08rem, 2vw, 1.45rem); line-height: 1.2; }
+  .masthead p { color: var(--purple-soft); font-size: .79rem; }
+  .masthead button:focus-visible { outline-color: white; }
+  .view-nav, .view-tabs, .tools, .tool-group { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
+  .view-nav { flex-wrap: nowrap; white-space: nowrap; }
+  #view-count, #zoom-level { font: 700 .82rem Consolas, monospace; white-space: nowrap; }
+  #next-view { background: var(--purple-deep); border-color: var(--purple-selected); color: white; }
+  #next-view:hover:not(:disabled) { background: var(--purple); }
+  .main-wrap { display: grid; gap: 10px 16px; padding-block: 8px; }
+  .board-pane, .sidebar { min-width: 0; }
+  .board-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 20px; margin-bottom: 4px; }
+  #view-title { color: var(--purple-deep); font-size: clamp(1.1rem, 1.7vw, 1.48rem); line-height: 1.25; }
+  .board-heading p { color: var(--muted); font-size: .88rem; }
+  .board-panel { display: flex; flex-direction: column; min-height: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface); }
+  .view-tabs, .tools { padding: 5px 8px; border-bottom: 1px solid var(--line); }
+  .board-panel :is(button, input):focus-visible { outline-offset: 1px; }
+  .tools { justify-content: space-between; font-size: .84rem; }
+  .tools label { cursor: pointer; white-space: nowrap; }
+  .tools input { accent-color: var(--purple); vertical-align: middle; }
+  #zoom-level { min-width: 4ch; text-align: center; }
+  .canvas-area { display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); place-items: center; overflow: hidden; height: clamp(220px, 67svh, 680px); background: #edf6e9; }
+  .canvas-area.pannable { cursor: grab; touch-action: none; }
+  .canvas-area.dragging { cursor: grabbing; }
+  .canvas-area:focus-visible { outline-color: var(--purple); outline-offset: -4px; }
+  #board-svg { display: block; width: 100%; height: 100%; min-width: 0; min-height: 0; transform-origin: center; user-select: none; }
+  .sidebar { display: flex; flex-direction: column; gap: 8px; }
+  .sidebar > h2 { font-size: 1.12rem; color: var(--purple-deep); }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; }
+  .placement-label { display: block; color: var(--muted); font-size: .82rem; margin-bottom: 3px; }
+  #placement-select { width: 100%; min-height: 30px; border: 1px solid var(--control-line); border-radius: 7px; padding: 2px 7px; color: var(--purple); background: var(--surface); font: inherit; font-size: .88rem; }
+  .placement-preview { height: 170px; margin-block: 4px; background: #edf6e9; border-radius: 6px; }
+  .placement-preview svg { display: block; width: 100%; height: 100%; }
+  .placement-note { color: var(--muted); font-size: .8rem; margin-top: 4px; }
+  .placement-model { cursor: pointer; }
+  .placement-model:focus-visible { outline: 2px solid var(--purple); outline-offset: 3px; }
+  .card h3 { font-size: .96rem; color: var(--purple); margin-bottom: 4px; }
+  .stage-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; margin-bottom: 5px; }
+  .stage-grid button { min-width: 0; padding-inline: 1px; }
+  .legend-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 175px), 1fr)); gap: 2px 8px; padding: 0; margin: 0; list-style: none; }
+  .legend-item { display: flex; align-items: baseline; gap: 6px; font-size: .84rem; }
+  .dot { width: .68em; height: .68em; flex: none; border-radius: 50%; }
+  .info-box, .check-list { font-size: .88rem; }
+  #hover-info { min-height: 2.7em; }
+  .check-list { margin: 0; padding-left: 1.35em; }
+  .check-list li + li { margin-top: 3px; }
+  .mirror-banner { border: 1px solid #e8adb3; border-left: 4px solid var(--warning); border-radius: 7px; background: #fff3f4; color: var(--warning); padding: 6px 9px; font-size: .88rem; }
+  .site-footer { background: var(--surface); border-top: 1px solid var(--line); color: var(--muted); font-size: .8rem; }
+  .site-footer .frame { display: flex; flex-wrap: wrap; gap: 3px 14px; padding-block: 5px; }
+  @media (min-width: 880px) and (min-height: 530px) {
+    body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+    .topbar, .site-footer { flex: none; }
+    .main-wrap { flex: 1; min-height: 0; grid-template-columns: minmax(0, 65fr) minmax(0, 35fr); }
+    .board-pane { display: flex; flex-direction: column; min-height: 0; }
+    .board-panel, .canvas-area { flex: 1 1 0%; min-height: 0; }
+    .canvas-area { height: auto; }
+    .sidebar { min-height: 0; overflow: auto; scrollbar-gutter: stable; padding: 0 5px 2px 2px; }
+  }
+  @media (max-width: 540px) {
+    .masthead { align-items: flex-start; flex-direction: column; }
+    .canvas-area { height: clamp(218px, 63vw, 330px); }
+    button { padding-inline: 6px; }
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="masthead frame">
+    <div>
+      <p>電子學實習・菊鍊串接電路</p>
+      <h1>PCB Layout 互動施工檢視器</h1>
+    </div>
+    <nav class="view-nav" aria-label="視角翻頁">
+      <button type="button" id="prev-view" title="左方向鍵" disabled>← 上一頁</button>
+      <span id="view-count" aria-live="polite">01 / 03</span>
+      <button type="button" id="next-view" title="右方向鍵">下一頁 →</button>
+      <a href="../">教學動畫</a>
+      <button type="button" id="full-view">全螢幕</button>
+    </nav>
+  </div>
+</header>
+<main class="main-wrap frame">
+  <section class="board-pane" aria-labelledby="view-title">
+    <div class="board-heading">
+      <h2 id="view-title">正面元件擺放</h2>
+      <p id="view-guide"><strong>觀察任務</strong>　核對元件位置與腳位。</p>
+    </div>
+    <div class="board-panel">
+      <nav class="view-tabs" aria-label="電路板視角">
+        <button type="button" id="view-front" aria-pressed="true" onclick="setView('front')">1. 正面元件</button>
+        <button type="button" id="view-xray" aria-pressed="false" onclick="setView('xray')">2. 背面走線透視</button>
+        <button type="button" id="view-solder" aria-pressed="false" onclick="setView('solder')">3. 翻面焊接</button>
+      </nav>
+      <div class="tools">
+        <div class="tool-group" role="group" aria-label="圖層">
+          <label><input type="checkbox" id="chk-traces" checked onchange="render()"> 顯示走線</label>
+          <label><input type="checkbox" id="chk-comps" checked onchange="render()"> 顯示元件</label>
+          <label><input type="checkbox" id="chk-stages" checked onchange="render()"> 顯示級別框</label>
+        </div>
+        <div class="tool-group" role="group" aria-label="縮放">
+          <button type="button" id="zoom-out" aria-label="縮小圖面">−</button>
+          <span id="zoom-level">100%</span>
+          <button type="button" id="zoom-in" aria-label="放大圖面">＋</button>
+          <button type="button" id="zoom-fit">適合頁面</button>
+        </div>
+      </div>
+      <div class="canvas-area" id="board-canvas" tabindex="0" role="group" aria-label="可縮放的電路板圖面">
+        <svg id="board-svg" viewBox="0 0 1820 1240" preserveAspectRatio="xMidYMid meet" role="img" aria-label="正面元件擺放"></svg>
+      </div>
+    </div>
+  </section>
+  <aside class="sidebar" aria-labelledby="sidebar-title" tabindex="0">
+    <h2 id="sidebar-title">施工解說</h2>
+    <p id="mirror-alert" class="mirror-banner" role="status" hidden>翻面焊接視角為左右鏡像，欄號由左到右是 55 → 1。圖上的元件外型是另一側元件面的投影。</p>
+    <section class="card">
+      <h3>元件放置方向</h3>
+      <label class="placement-label" for="placement-select">選擇電晶體或 LED</label>
+      <select id="placement-select" aria-describedby="placement-info"></select>
+      <div id="placement-preview" class="placement-preview" aria-hidden="true" inert></div>
+      <p class="info-box" id="placement-info"></p>
+      <p class="placement-note">板圖為俯視示意，亮線標出電晶體平面和 LED 陰極平邊。LED 長短腳以未剪腳為準。</p>
+    </section>
+
+    <section class="card">
+      <h3>級別高亮</h3>
+      <div class="stage-grid" id="stage-btns"></div>
+      <button type="button" id="stg-btn-0" aria-pressed="true" onclick="selectStage(0)">顯示全部 10 級</button>
+    </section>
+    <section class="card">
+      <h3>元件腳位</h3>
+      <p class="info-box" id="hover-info">將滑鼠移到元件腳位，可查看元件、腳位名稱與正面座標。</p>
+    </section>
+    <section class="card">
+      <h3>走線網路色碼</h3>
+      <ul class="legend-list">
+        <li class="legend-item"><span class="dot" style="background:#b8343c"></span>+5 V 母線（第 5、31 列，第 54 欄）</li>
+        <li class="legend-item"><span class="dot" style="background:#24734d"></span>GND 共用母線（第 18 列）</li>
+        <li class="legend-item"><span class="dot" style="background:#1f6b9f"></span>B1～B10 基極控制線</li>
+        <li class="legend-item"><span class="dot" style="background:#8c6517"></span>C1～C9 集極輸出線</li>
+        <li class="legend-item"><span class="dot" style="background:#7548a5"></span>X1～X9 二極體耦合線</li>
+        <li class="legend-item"><span class="dot" style="background:#a43370"></span>L1～L10 LED 限流線</li>
+      </ul>
+    </section>
+    <section class="card">
+      <h3>焊接檢查要點</h3>
+      <ol class="check-list">
+        <li><strong>電阻（1/4 W）</strong>垂直插放，跨 4 格（10.16 mm）。</li>
+        <li><strong>1N4148 二極體</strong>水平插放，跨 3 格（7.62 mm）。黑環是陰極 K。</li>
+        <li><strong>9012／9013</strong>分別用於奇數級 PNP、偶數級 NPN。正面圖中，Q1～Q5 平面朝下，左至右 E–B–C。Q6～Q10 旋轉 180°，平面朝上，右至左 E–B–C。此圖採 E–B–C 腳序範例，插板前請核對實際料號。</li>
+        <li><strong>LED</strong>奇數級用綠燈、偶數級用紅燈。LED1～LED5 的長腳 A（＋）朝上、短腳 K（－）與平邊朝下。LED6～LED10 旋轉 180°，長腳朝下、短腳與平邊朝上。</li>
+      </ol>
+    </section>
+    <section class="card">
+      <h3>板面與操作</h3>
+      <p class="info-box">16.5 × 10.3 cm，原圖已向左轉 90°。孔距 2.54 mm，共 55 欄 × 36 列。單面板配置為 0 跳線、背面 90° 走線。</p>
+      <p class="info-box">←／→ 切換視角。在圖面上滾動滑鼠即可縮放，放大後可拖曳平移。右欄可獨立捲動。</p>
+    </section>
+  </aside>
+</main>
+<footer class="site-footer">
+  <div class="frame">
+    <span>© __PAGES_BUILD_YEAR__ yucs. 版權所有。</span>
+    <span>程式部署時間：<time datetime="__PAGES_BUILD_DATETIME__">__PAGES_BUILD_TIME__</time></span>
+    <span>PCB Layout</span>
+  </div>
+</footer>
+
+
+<script>
+const DATA = {"ncol": 55, "nrow": 36, "blocked": [[5, 2], [5, 12], [5, 22], [5, 32], [15, 2], [15, 12], [15, 22], [15, 32], [25, 2], [25, 12], [25, 22], [25, 32], [35, 2], [35, 12], [35, 22], [35, 32], [45, 2], [45, 12], [45, 22], [45, 32], [54, 2], [54, 12], [54, 22], [54, 32]], "comps": [{"ref": "Q1", "kind": "Q", "value": "9012", "stage": 1, "pads": {"E": [4, 6], "B": [5, 6], "C": [6, 6]}}, {"ref": "R1", "kind": "R", "value": "10K", "stage": 1, "pads": {"b": [2, 13], "g": [2, 17]}}, {"ref": "R2", "kind": "R", "value": "1K", "stage": 1, "pads": {"c": [6, 8], "l": [6, 12]}}, {"ref": "LED1", "kind": "LED", "value": "GREEN", "stage": 1, "pads": {"A": [6, 15], "K": [6, 16]}}, {"ref": "R3", "kind": "R", "value": "10K", "stage": 1, "pads": {"c": [8, 7], "x": [8, 11]}}, {"ref": "D1", "kind": "D", "value": "1N4148", "stage": 1, "pads": {"A": [8, 14], "K": [11, 14]}}, {"ref": "Q2", "kind": "Q", "value": "9013", "stage": 2, "pads": {"E": [14, 15], "B": [15, 15], "C": [16, 15]}}, {"ref": "R4", "kind": "R", "value": "100K", "stage": 2, "pads": {"b": [12, 13], "g": [12, 17]}}, {"ref": "R5", "kind": "R", "value": "1K", "stage": 2, "pads": {"l": [16, 9], "c": [16, 13]}}, {"ref": "LED2", "kind": "LED", "value": "RED", "stage": 2, "pads": {"A": [16, 5], "K": [16, 6]}}, {"ref": "R6", "kind": "R", "value": "10K", "stage": 2, "pads": {"c": [18, 14], "x": [18, 10]}}, {"ref": "D2", "kind": "D", "value": "1N4148", "stage": 2, "pads": {"K": [18, 7], "A": [21, 7]}}, {"ref": "Q3", "kind": "Q", "value": "9012", "stage": 3, "pads": {"E": [24, 6], "B": [25, 6], "C": [26, 6]}}, {"ref": "R8", "kind": "R", "value": "100K", "stage": 3, "pads": {"v5": [22, 4], "b": [22, 8]}}, {"ref": "R7", "kind": "R", "value": "1K", "stage": 3, "pads": {"c": [26, 8], "l": [26, 12]}}, {"ref": "LED3", "kind": "LED", "value": "GREEN", "stage": 3, "pads": {"A": [26, 15], "K": [26, 16]}}, {"ref": "R9", "kind": "R", "value": "10K", "stage": 3, "pads": {"c": [28, 7], "x": [28, 11]}}, {"ref": "D3", "kind": "D", "value": "1N4148", "stage": 3, "pads": {"A": [28, 14], "K": [31, 14]}}, {"ref": "Q4", "kind": "Q", "value": "9013", "stage": 4, "pads": {"E": [34, 15], "B": [35, 15], "C": [36, 15]}}, {"ref": "R10", "kind": "R", "value": "100K", "stage": 4, "pads": {"b": [32, 13], "g": [32, 17]}}, {"ref": "R11", "kind": "R", "value": "1K", "stage": 4, "pads": {"l": [36, 9], "c": [36, 13]}}, {"ref": "LED4", "kind": "LED", "value": "RED", "stage": 4, "pads": {"A": [36, 5], "K": [36, 6]}}, {"ref": "R12", "kind": "R", "value": "10K", "stage": 4, "pads": {"c": [38, 14], "x": [38, 10]}}, {"ref": "D4", "kind": "D", "value": "1N4148", "stage": 4, "pads": {"K": [38, 7], "A": [41, 7]}}, {"ref": "Q5", "kind": "Q", "value": "9012", "stage": 5, "pads": {"E": [44, 6], "B": [45, 6], "C": [46, 6]}}, {"ref": "R14", "kind": "R", "value": "100K", "stage": 5, "pads": {"v5": [42, 4], "b": [42, 8]}}, {"ref": "R13", "kind": "R", "value": "1K", "stage": 5, "pads": {"c": [46, 8], "l": [46, 12]}}, {"ref": "LED5", "kind": "LED", "value": "GREEN", "stage": 5, "pads": {"A": [46, 15], "K": [46, 16]}}, {"ref": "R15", "kind": "R", "value": "10K", "stage": 5, "pads": {"c": [48, 7], "x": [48, 11]}}, {"ref": "D5", "kind": "D", "value": "1N4148", "stage": 5, "pads": {"A": [48, 14], "K": [51, 14]}}, {"ref": "Q6", "kind": "Q", "value": "9013", "stage": 6, "pads": {"E": [48, 19], "B": [47, 19], "C": [46, 19]}}, {"ref": "R16", "kind": "R", "value": "100K", "stage": 6, "pads": {"b": [50, 21], "g": [50, 17]}}, {"ref": "R17", "kind": "R", "value": "1K", "stage": 6, "pads": {"l": [46, 25], "c": [46, 21]}}, {"ref": "LED6", "kind": "LED", "value": "RED", "stage": 6, "pads": {"A": [46, 29], "K": [46, 28]}}, {"ref": "R18", "kind": "R", "value": "10K", "stage": 6, "pads": {"c": [44, 20], "x": [44, 24]}}, {"ref": "D6", "kind": "D", "value": "1N4148", "stage": 6, "pads": {"K": [44, 27], "A": [41, 27]}}, {"ref": "Q7", "kind": "Q", "value": "9012", "stage": 7, "pads": {"E": [38, 28], "B": [37, 28], "C": [36, 28]}}, {"ref": "R20", "kind": "R", "value": "100K", "stage": 7, "pads": {"v5": [40, 30], "b": [40, 26]}}, {"ref": "R19", "kind": "R", "value": "1K", "stage": 7, "pads": {"c": [36, 26], "l": [36, 22]}}, {"ref": "LED7", "kind": "LED", "value": "GREEN", "stage": 7, "pads": {"A": [36, 19], "K": [36, 18]}}, {"ref": "R21", "kind": "R", "value": "10K", "stage": 7, "pads": {"c": [34, 27], "x": [34, 23]}}, {"ref": "D7", "kind": "D", "value": "1N4148", "stage": 7, "pads": {"A": [34, 20], "K": [31, 20]}}, {"ref": "Q8", "kind": "Q", "value": "9013", "stage": 8, "pads": {"E": [28, 19], "B": [27, 19], "C": [26, 19]}}, {"ref": "R22", "kind": "R", "value": "100K", "stage": 8, "pads": {"b": [30, 21], "g": [30, 17]}}, {"ref": "R23", "kind": "R", "value": "1K", "stage": 8, "pads": {"l": [26, 25], "c": [26, 21]}}, {"ref": "LED8", "kind": "LED", "value": "RED", "stage": 8, "pads": {"A": [26, 29], "K": [26, 28]}}, {"ref": "R24", "kind": "R", "value": "10K", "stage": 8, "pads": {"c": [24, 20], "x": [24, 24]}}, {"ref": "D8", "kind": "D", "value": "1N4148", "stage": 8, "pads": {"K": [24, 27], "A": [21, 27]}}, {"ref": "Q9", "kind": "Q", "value": "9012", "stage": 9, "pads": {"E": [18, 28], "B": [17, 28], "C": [16, 28]}}, {"ref": "R26", "kind": "R", "value": "100K", "stage": 9, "pads": {"v5": [20, 30], "b": [20, 26]}}, {"ref": "R25", "kind": "R", "value": "1K", "stage": 9, "pads": {"c": [16, 26], "l": [16, 22]}}, {"ref": "LED9", "kind": "LED", "value": "GREEN", "stage": 9, "pads": {"A": [16, 19], "K": [16, 18]}}, {"ref": "R27", "kind": "R", "value": "10K", "stage": 9, "pads": {"c": [14, 27], "x": [14, 23]}}, {"ref": "D9", "kind": "D", "value": "1N4148", "stage": 9, "pads": {"A": [14, 20], "K": [11, 20]}}, {"ref": "Q10", "kind": "Q", "value": "9013", "stage": 10, "pads": {"E": [8, 19], "B": [7, 19], "C": [6, 19]}}, {"ref": "R28", "kind": "R", "value": "100K", "stage": 10, "pads": {"b": [10, 21], "g": [10, 17]}}, {"ref": "R29", "kind": "R", "value": "1K", "stage": 10, "pads": {"l": [6, 25], "c": [6, 21]}}, {"ref": "LED10", "kind": "LED", "value": "RED", "stage": 10, "pads": {"A": [6, 29], "K": [6, 28]}}, {"ref": "J1", "kind": "HDR", "value": "PWR", "stage": null, "pads": {"V5": [0, 16], "GND": [0, 17]}}], "traces": [{"net": "5V", "pts": [[4, 6], [4, 4]], "expanded": [[4, 6], [4, 5], [4, 4]]}, {"net": "B1", "pts": [[5, 6], [5, 7], [2, 7]], "expanded": [[5, 6], [5, 7], [4, 7], [3, 7], [2, 7]]}, {"net": "B1", "pts": [[2, 7], [2, 13]], "expanded": [[2, 7], [2, 8], [2, 9], [2, 10], [2, 11], [2, 12], [2, 13]]}, {"net": "GND", "pts": [[2, 17], [2, 17]], "expanded": [[2, 17]]}, {"net": "C1", "pts": [[6, 6], [6, 8]], "expanded": [[6, 6], [6, 7], [6, 8]]}, {"net": "L1", "pts": [[6, 12], [6, 15]], "expanded": [[6, 12], [6, 13], [6, 14], [6, 15]]}, {"net": "GND", "pts": [[6, 16], [6, 17]], "expanded": [[6, 16], [6, 17]]}, {"net": "C1", "pts": [[6, 7], [8, 7]], "expanded": [[6, 7], [7, 7], [8, 7]]}, {"net": "X1", "pts": [[8, 11], [8, 14]], "expanded": [[8, 11], [8, 12], [8, 13], [8, 14]]}, {"net": "GND", "pts": [[14, 15], [14, 17]], "expanded": [[14, 15], [14, 16], [14, 17]]}, {"net": "B2", "pts": [[15, 15], [15, 14], [11, 14]], "expanded": [[15, 15], [15, 14], [14, 14], [13, 14], [12, 14], [11, 14]]}, {"net": "B2", "pts": [[12, 14], [12, 13]], "expanded": [[12, 14], [12, 13]]}, {"net": "GND", "pts": [[12, 17], [12, 17]], "expanded": [[12, 17]]}, {"net": "C2", "pts": [[16, 15], [16, 13]], "expanded": [[16, 15], [16, 14], [16, 13]]}, {"net": "L2", "pts": [[16, 6], [16, 9]], "expanded": [[16, 6], [16, 7], [16, 8], [16, 9]]}, {"net": "5V", "pts": [[16, 5], [16, 4]], "expanded": [[16, 5], [16, 4]]}, {"net": "C2", "pts": [[16, 14], [18, 14]], "expanded": [[16, 14], [17, 14], [18, 14]]}, {"net": "X2", "pts": [[18, 10], [18, 7]], "expanded": [[18, 10], [18, 9], [18, 8], [18, 7]]}, {"net": "5V", "pts": [[24, 6], [24, 4]], "expanded": [[24, 6], [24, 5], [24, 4]]}, {"net": "B3", "pts": [[25, 6], [25, 7], [21, 7]], "expanded": [[25, 6], [25, 7], [24, 7], [23, 7], [22, 7], [21, 7]]}, {"net": "B3", "pts": [[22, 7], [22, 8]], "expanded": [[22, 7], [22, 8]]}, {"net": "C3", "pts": [[26, 6], [26, 8]], "expanded": [[26, 6], [26, 7], [26, 8]]}, {"net": "L3", "pts": [[26, 12], [26, 15]], "expanded": [[26, 12], [26, 13], [26, 14], [26, 15]]}, {"net": "GND", "pts": [[26, 16], [26, 17]], "expanded": [[26, 16], [26, 17]]}, {"net": "C3", "pts": [[26, 7], [28, 7]], "expanded": [[26, 7], [27, 7], [28, 7]]}, {"net": "X3", "pts": [[28, 11], [28, 14]], "expanded": [[28, 11], [28, 12], [28, 13], [28, 14]]}, {"net": "GND", "pts": [[34, 15], [34, 17]], "expanded": [[34, 15], [34, 16], [34, 17]]}, {"net": "B4", "pts": [[35, 15], [35, 14], [31, 14]], "expanded": [[35, 15], [35, 14], [34, 14], [33, 14], [32, 14], [31, 14]]}, {"net": "B4", "pts": [[32, 14], [32, 13]], "expanded": [[32, 14], [32, 13]]}, {"net": "GND", "pts": [[32, 17], [32, 17]], "expanded": [[32, 17]]}, {"net": "C4", "pts": [[36, 15], [36, 13]], "expanded": [[36, 15], [36, 14], [36, 13]]}, {"net": "L4", "pts": [[36, 6], [36, 9]], "expanded": [[36, 6], [36, 7], [36, 8], [36, 9]]}, {"net": "5V", "pts": [[36, 5], [36, 4]], "expanded": [[36, 5], [36, 4]]}, {"net": "C4", "pts": [[36, 14], [38, 14]], "expanded": [[36, 14], [37, 14], [38, 14]]}, {"net": "X4", "pts": [[38, 10], [38, 7]], "expanded": [[38, 10], [38, 9], [38, 8], [38, 7]]}, {"net": "5V", "pts": [[44, 6], [44, 4]], "expanded": [[44, 6], [44, 5], [44, 4]]}, {"net": "B5", "pts": [[45, 6], [45, 7], [41, 7]], "expanded": [[45, 6], [45, 7], [44, 7], [43, 7], [42, 7], [41, 7]]}, {"net": "B5", "pts": [[42, 7], [42, 8]], "expanded": [[42, 7], [42, 8]]}, {"net": "C5", "pts": [[46, 6], [46, 8]], "expanded": [[46, 6], [46, 7], [46, 8]]}, {"net": "L5", "pts": [[46, 12], [46, 15]], "expanded": [[46, 12], [46, 13], [46, 14], [46, 15]]}, {"net": "GND", "pts": [[46, 16], [46, 17]], "expanded": [[46, 16], [46, 17]]}, {"net": "C5", "pts": [[46, 7], [48, 7]], "expanded": [[46, 7], [47, 7], [48, 7]]}, {"net": "X5", "pts": [[48, 11], [48, 14]], "expanded": [[48, 11], [48, 12], [48, 13], [48, 14]]}, {"net": "GND", "pts": [[48, 19], [48, 17]], "expanded": [[48, 19], [48, 18], [48, 17]]}, {"net": "B6", "pts": [[47, 19], [47, 20], [51, 20]], "expanded": [[47, 19], [47, 20], [48, 20], [49, 20], [50, 20], [51, 20]]}, {"net": "B6", "pts": [[50, 20], [50, 21]], "expanded": [[50, 20], [50, 21]]}, {"net": "GND", "pts": [[50, 17], [50, 17]], "expanded": [[50, 17]]}, {"net": "C6", "pts": [[46, 19], [46, 21]], "expanded": [[46, 19], [46, 20], [46, 21]]}, {"net": "L6", "pts": [[46, 28], [46, 25]], "expanded": [[46, 28], [46, 27], [46, 26], [46, 25]]}, {"net": "5V", "pts": [[46, 29], [46, 30]], "expanded": [[46, 29], [46, 30]]}, {"net": "C6", "pts": [[46, 20], [44, 20]], "expanded": [[46, 20], [45, 20], [44, 20]]}, {"net": "X6", "pts": [[44, 24], [44, 27]], "expanded": [[44, 24], [44, 25], [44, 26], [44, 27]]}, {"net": "5V", "pts": [[38, 28], [38, 30]], "expanded": [[38, 28], [38, 29], [38, 30]]}, {"net": "B7", "pts": [[37, 28], [37, 27], [41, 27]], "expanded": [[37, 28], [37, 27], [38, 27], [39, 27], [40, 27], [41, 27]]}, {"net": "B7", "pts": [[40, 27], [40, 26]], "expanded": [[40, 27], [40, 26]]}, {"net": "C7", "pts": [[36, 28], [36, 26]], "expanded": [[36, 28], [36, 27], [36, 26]]}, {"net": "L7", "pts": [[36, 22], [36, 19]], "expanded": [[36, 22], [36, 21], [36, 20], [36, 19]]}, {"net": "GND", "pts": [[36, 18], [36, 17]], "expanded": [[36, 18], [36, 17]]}, {"net": "C7", "pts": [[36, 27], [34, 27]], "expanded": [[36, 27], [35, 27], [34, 27]]}, {"net": "X7", "pts": [[34, 23], [34, 20]], "expanded": [[34, 23], [34, 22], [34, 21], [34, 20]]}, {"net": "GND", "pts": [[28, 19], [28, 17]], "expanded": [[28, 19], [28, 18], [28, 17]]}, {"net": "B8", "pts": [[27, 19], [27, 20], [31, 20]], "expanded": [[27, 19], [27, 20], [28, 20], [29, 20], [30, 20], [31, 20]]}, {"net": "B8", "pts": [[30, 20], [30, 21]], "expanded": [[30, 20], [30, 21]]}, {"net": "GND", "pts": [[30, 17], [30, 17]], "expanded": [[30, 17]]}, {"net": "C8", "pts": [[26, 19], [26, 21]], "expanded": [[26, 19], [26, 20], [26, 21]]}, {"net": "L8", "pts": [[26, 28], [26, 25]], "expanded": [[26, 28], [26, 27], [26, 26], [26, 25]]}, {"net": "5V", "pts": [[26, 29], [26, 30]], "expanded": [[26, 29], [26, 30]]}, {"net": "C8", "pts": [[26, 20], [24, 20]], "expanded": [[26, 20], [25, 20], [24, 20]]}, {"net": "X8", "pts": [[24, 24], [24, 27]], "expanded": [[24, 24], [24, 25], [24, 26], [24, 27]]}, {"net": "5V", "pts": [[18, 28], [18, 30]], "expanded": [[18, 28], [18, 29], [18, 30]]}, {"net": "B9", "pts": [[17, 28], [17, 27], [21, 27]], "expanded": [[17, 28], [17, 27], [18, 27], [19, 27], [20, 27], [21, 27]]}, {"net": "B9", "pts": [[20, 27], [20, 26]], "expanded": [[20, 27], [20, 26]]}, {"net": "C9", "pts": [[16, 28], [16, 26]], "expanded": [[16, 28], [16, 27], [16, 26]]}, {"net": "L9", "pts": [[16, 22], [16, 19]], "expanded": [[16, 22], [16, 21], [16, 20], [16, 19]]}, {"net": "GND", "pts": [[16, 18], [16, 17]], "expanded": [[16, 18], [16, 17]]}, {"net": "C9", "pts": [[16, 27], [14, 27]], "expanded": [[16, 27], [15, 27], [14, 27]]}, {"net": "X9", "pts": [[14, 23], [14, 20]], "expanded": [[14, 23], [14, 22], [14, 21], [14, 20]]}, {"net": "GND", "pts": [[8, 19], [8, 17]], "expanded": [[8, 19], [8, 18], [8, 17]]}, {"net": "B10", "pts": [[7, 19], [7, 20], [11, 20]], "expanded": [[7, 19], [7, 20], [8, 20], [9, 20], [10, 20], [11, 20]]}, {"net": "B10", "pts": [[10, 20], [10, 21]], "expanded": [[10, 20], [10, 21]]}, {"net": "GND", "pts": [[10, 17], [10, 17]], "expanded": [[10, 17]]}, {"net": "C10", "pts": [[6, 19], [6, 21]], "expanded": [[6, 19], [6, 20], [6, 21]]}, {"net": "L10", "pts": [[6, 28], [6, 25]], "expanded": [[6, 28], [6, 27], [6, 26], [6, 25]]}, {"net": "5V", "pts": [[6, 29], [6, 30]], "expanded": [[6, 29], [6, 30]]}, {"net": "5V", "pts": [[0, 4], [53, 4]], "expanded": [[0, 4], [1, 4], [2, 4], [3, 4], [4, 4], [5, 4], [6, 4], [7, 4], [8, 4], [9, 4], [10, 4], [11, 4], [12, 4], [13, 4], [14, 4], [15, 4], [16, 4], [17, 4], [18, 4], [19, 4], [20, 4], [21, 4], [22, 4], [23, 4], [24, 4], [25, 4], [26, 4], [27, 4], [28, 4], [29, 4], [30, 4], [31, 4], [32, 4], [33, 4], [34, 4], [35, 4], [36, 4], [37, 4], [38, 4], [39, 4], [40, 4], [41, 4], [42, 4], [43, 4], [44, 4], [45, 4], [46, 4], [47, 4], [48, 4], [49, 4], [50, 4], [51, 4], [52, 4], [53, 4]]}, {"net": "5V", "pts": [[1, 30], [53, 30]], "expanded": [[1, 30], [2, 30], [3, 30], [4, 30], [5, 30], [6, 30], [7, 30], [8, 30], [9, 30], [10, 30], [11, 30], [12, 30], [13, 30], [14, 30], [15, 30], [16, 30], [17, 30], [18, 30], [19, 30], [20, 30], [21, 30], [22, 30], [23, 30], [24, 30], [25, 30], [26, 30], [27, 30], [28, 30], [29, 30], [30, 30], [31, 30], [32, 30], [33, 30], [34, 30], [35, 30], [36, 30], [37, 30], [38, 30], [39, 30], [40, 30], [41, 30], [42, 30], [43, 30], [44, 30], [45, 30], [46, 30], [47, 30], [48, 30], [49, 30], [50, 30], [51, 30], [52, 30], [53, 30]]}, {"net": "5V", "pts": [[53, 4], [53, 30]], "expanded": [[53, 4], [53, 5], [53, 6], [53, 7], [53, 8], [53, 9], [53, 10], [53, 11], [53, 12], [53, 13], [53, 14], [53, 15], [53, 16], [53, 17], [53, 18], [53, 19], [53, 20], [53, 21], [53, 22], [53, 23], [53, 24], [53, 25], [53, 26], [53, 27], [53, 28], [53, 29], [53, 30]]}, {"net": "GND", "pts": [[0, 17], [50, 17]], "expanded": [[0, 17], [1, 17], [2, 17], [3, 17], [4, 17], [5, 17], [6, 17], [7, 17], [8, 17], [9, 17], [10, 17], [11, 17], [12, 17], [13, 17], [14, 17], [15, 17], [16, 17], [17, 17], [18, 17], [19, 17], [20, 17], [21, 17], [22, 17], [23, 17], [24, 17], [25, 17], [26, 17], [27, 17], [28, 17], [29, 17], [30, 17], [31, 17], [32, 17], [33, 17], [34, 17], [35, 17], [36, 17], [37, 17], [38, 17], [39, 17], [40, 17], [41, 17], [42, 17], [43, 17], [44, 17], [45, 17], [46, 17], [47, 17], [48, 17], [49, 17], [50, 17]]}, {"net": "5V", "pts": [[0, 4], [0, 16]], "expanded": [[0, 4], [0, 5], [0, 6], [0, 7], [0, 8], [0, 9], [0, 10], [0, 11], [0, 12], [0, 13], [0, 14], [0, 15], [0, 16]]}, {"net": "B6", "pts": [[51, 14], [51, 20]], "expanded": [[51, 14], [51, 15], [51, 16], [51, 17], [51, 18], [51, 19], [51, 20]]}]};
+let currentView = 'front';
+let activeStage = 0;
+
+
+const VIEWS = [
+  { id: 'front', title: '正面元件擺放', guide: '核對元件位置與腳位。' },
+  { id: 'xray', title: '背面走線・正面透視', guide: '從正面座標對照背面的網路連接。' },
+  { id: 'solder', title: '翻面焊接・左右鏡像', guide: '沿著 55 → 1 的欄號核對焊點。' }
+];
+const boardCanvas = document.getElementById('board-canvas');
+const boardSvg = document.getElementById('board-svg');
+const prevView = document.getElementById('prev-view');
+const nextView = document.getElementById('next-view');
+const fullView = document.getElementById('full-view');
+const camera = { scale: 1, x: 0, y: 0 };
+
+const stgWrap = document.getElementById('stage-btns');
+for (let k = 1; k <= 10; k++) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.id = 'stg-btn-' + k;
+  button.textContent = 'Q' + k;
+  button.setAttribute('aria-label', '高亮第 ' + k + ' 級');
+  button.setAttribute('aria-pressed', 'false');
+  button.addEventListener('click', () => selectStage(k));
+  stgWrap.appendChild(button);
+}
+
+function selectStage(k) {
+  activeStage = activeStage === k ? 0 : k;
+  for (let i = 0; i <= 10; i++) {
+    document.getElementById('stg-btn-' + i).setAttribute('aria-pressed', String(i === activeStage));
+  }
+  render();
+}
+
+function applyCamera() {
+  boardSvg.style.transform = `translate(${camera.x}px, ${camera.y}px) scale(${camera.scale})`;
+  document.getElementById('zoom-level').textContent = Math.round(camera.scale * 100) + '%';
+  boardCanvas.classList.toggle('pannable', camera.scale > 1);
+}
+
+function fitBoard() {
+  camera.scale = 1;
+  camera.x = 0;
+  camera.y = 0;
+  applyCamera();
+}
+
+function setView(view) {
+  const index = VIEWS.findIndex(item => item.id === view);
+  if (index < 0) return;
+  currentView = view;
+  VIEWS.forEach(item => {
+    document.getElementById('view-' + item.id).setAttribute('aria-pressed', String(item.id === view));
+  });
+  document.getElementById('mirror-alert').hidden = view !== 'solder';
+  document.getElementById('view-count').textContent = String(index + 1).padStart(2, '0') + ' / 03';
+  document.getElementById('view-title').textContent = VIEWS[index].title;
+  document.getElementById('view-guide').textContent = '觀察任務　' + VIEWS[index].guide;
+  boardSvg.setAttribute('aria-label', VIEWS[index].title);
+  prevView.disabled = index === 0;
+  nextView.disabled = index === VIEWS.length - 1;
+  document.getElementById('chk-comps').checked = true;
+  document.getElementById('chk-traces').checked = true;
+  document.getElementById('hover-info').textContent = '將滑鼠移到元件腳位，可查看元件、腳位名稱與正面座標。';
+  fitBoard();
+  render();
+  showPlacement(placementSelect.value || 'Q1');
+}
+
+function turnView(step) {
+  const index = VIEWS.findIndex(item => item.id === currentView);
+  const next = Math.max(0, Math.min(VIEWS.length - 1, index + step));
+  if (next !== index) setView(VIEWS[next].id);
+}
+prevView.addEventListener('click', () => turnView(-1));
+nextView.addEventListener('click', () => turnView(1));
+
+function setZoom(scale) {
+  camera.scale = Math.max(.75, Math.min(5, scale));
+  if (camera.scale <= 1) {
+    camera.x = 0;
+    camera.y = 0;
+  }
+  applyCamera();
+}
+document.getElementById('zoom-in').addEventListener('click', () => setZoom(camera.scale + .25));
+document.getElementById('zoom-out').addEventListener('click', () => setZoom(camera.scale - .25));
+document.getElementById('zoom-fit').addEventListener('click', fitBoard);
+boardCanvas.addEventListener('wheel', event => {
+  event.preventDefault();
+  setZoom(camera.scale + (event.deltaY < 0 ? .15 : -.15));
+}, { passive: false });
+
+let drag = null;
+boardCanvas.addEventListener('pointerdown', event => {
+  if (event.button !== 0 || camera.scale <= 1) return;
+  drag = { id: event.pointerId, x: event.clientX - camera.x, y: event.clientY - camera.y };
+  boardCanvas.classList.add('dragging');
+  boardCanvas.setPointerCapture(event.pointerId);
+});
+boardCanvas.addEventListener('pointermove', event => {
+  if (!drag || drag.id !== event.pointerId) return;
+  camera.x = event.clientX - drag.x;
+  camera.y = event.clientY - drag.y;
+  applyCamera();
+});
+boardCanvas.addEventListener('lostpointercapture', () => {
+  drag = null;
+  boardCanvas.classList.remove('dragging');
+});
+
+document.addEventListener('keydown', event => {
+  if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey ||
+      event.target.closest('input, select, textarea, [contenteditable="true"]')) return;
+  if (event.key === 'ArrowLeft') turnView(-1);
+  else if (event.key === 'ArrowRight') turnView(1);
+  else return;
+  event.preventDefault();
+});
+fullView.addEventListener('click', async () => {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await document.documentElement.requestFullscreen();
+  } catch (_) {
+    fullView.textContent = '無法開啟全螢幕';
+  }
+});
+document.addEventListener('fullscreenchange', () => {
+  fullView.textContent = document.fullscreenElement ? '退出全螢幕' : '全螢幕';
+});
+
+
+function netColor(net) {
+  if (net === '5V') return '#b8343c';
+  if (net === 'GND') return '#24734d';
+  if (net.startsWith('B')) return '#1f6b9f';
+  if (net.startsWith('C')) return '#8c6517';
+  if (net.startsWith('X')) return '#7548a5';
+  if (net.startsWith('L')) return '#a43370';
+  return '#f59e0b';
+}
+
+function netStage(net) {
+  const m = net.match(/^[BCXL](\d+)$/);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
+function gx(x, mirror) {
+  const col = mirror ? (DATA.ncol - 1 - x) : x;
+  return 80 + col * 30;
+}
+function gy(y) {
+  return 85 + y * 30;
+}
+
+
+const placementSelect = document.getElementById('placement-select');
+const placementPreview = document.getElementById('placement-preview');
+const placementInfo = document.getElementById('placement-info');
+const placementParts = DATA.comps.filter(component => component.kind === 'Q' || component.kind === 'LED');
+placementSelect.innerHTML = placementParts.map(component =>
+  `<option value="${component.ref}">${component.ref}　${component.value}</option>`).join('');
+placementSelect.addEventListener('change', () => showPlacement(placementSelect.value));
+
+function drawTransistorModel(component, mirror, opacity, labelOpacity) {
+  const [ex] = component.pads.E;
+  const [bx, by] = component.pads.B;
+  const [cx] = component.pads.C;
+  const x = gx(bx, mirror);
+  const y = gy(by);
+  // Use the original E/C arrangement. A left/right board flip keeps the flat edge's up/down direction.
+  const flatSign = cx > ex ? 1 : -1;
+  const flatDirection = flatSign > 0 ? '↓' : '↑';
+  const typeColor = component.value === '9012' ? '#78439b' : '#086f78';
+  const ghost = currentView === 'solder';
+  return `
+    <g class="placement-model" data-component="${component.ref}" data-flat="${flatSign > 0 ? 'down' : 'up'}"
+      role="button" tabindex="0" aria-label="${component.ref} ${component.value}，平面朝${flatSign > 0 ? '下' : '上'}">
+      <title>${component.ref} ${component.value}，平面朝${flatSign > 0 ? '下' : '上'}，點選查看放置方向</title>
+      <g transform="translate(${x} ${y}) scale(1 ${flatSign})" opacity="${opacity}">
+        <path d="M-46 12H46V-12A46 42 0 0 0-46-12Z"
+          fill="${ghost ? '#e6e1ec' : '#30363b'}" stroke="${typeColor}" stroke-width="3"
+          ${ghost ? 'stroke-dasharray="5 3"' : ''}/>
+        <path d="M-36-16Q-24-43 0-44" fill="none" stroke="#8d969d" stroke-width="3" stroke-linecap="round"/>
+        <line x1="-44" y1="12" x2="44" y2="12" stroke="#1d2923" stroke-width="6"/>
+        <line class="flat-edge" x1="-43" y1="12" x2="43" y2="12" stroke="#ffe08a" stroke-width="3"/>
+      </g>
+      <text x="${x}" y="${flatSign > 0 ? y - 62 : y + 68}" text-anchor="middle"
+        fill="${typeColor}" font-size="13" font-weight="700" fill-opacity="${labelOpacity}">${component.ref} ${component.value}</text>
+      <text x="${x + 55}" y="${y + flatSign * 11}" fill="#293e30" font-size="12" font-weight="700"
+        fill-opacity="${labelOpacity}">平面 ${flatDirection}</text>
+    </g>`;
+}
+
+function drawLedModel(component, mirror, opacity, labelOpacity) {
+  const [ax, ay] = component.pads.A;
+  const [kx, ky] = component.pads.K;
+  const x = (gx(ax, mirror) + gx(kx, mirror)) / 2;
+  const y = (gy(ay) + gy(ky)) / 2;
+  const cathodeSign = ky > ay ? 1 : -1;
+  const green = component.value === 'GREEN';
+  const color = green ? '#21824b' : '#bd3040';
+  const tint = green ? '#b8e0c4' : '#f2c0c7';
+  const ghost = currentView === 'solder';
+  return `
+    <g class="placement-model" data-component="${component.ref}" data-long="${ay < ky ? 'up' : 'down'}"
+      role="button" tabindex="0" aria-label="${component.ref}，長腳 A 朝${ay < ky ? '上' : '下'}，短腳 K 朝${ky < ay ? '上' : '下'}">
+      <title>${component.ref}，長腳 A（＋），短腳 K（－），點選查看放置方向</title>
+      <g transform="translate(${x} ${y}) scale(1 ${cathodeSign})" opacity="${opacity}">
+        <path d="M-12.6 25A28 28 0 1 1 12.6 25Z" fill="${ghost ? tint : color}"
+          stroke="${color}" stroke-width="2.5" ${ghost ? 'stroke-dasharray="5 3"' : ''}/>
+        <circle r="20" fill="${tint}" fill-opacity=".35"/>
+        <path d="M-18-7Q-15-18-5-20" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>
+        <line class="cathode-flat" x1="-12.6" y1="25" x2="12.6" y2="25" stroke="#263f2c" stroke-width="5"/>
+        <line x1="-11.5" y1="25" x2="11.5" y2="25" stroke="#ffe08a" stroke-width="2"/>
+      </g>
+      <text x="${x - 37}" y="${y + 4}" text-anchor="end" fill="${color}" font-size="13"
+        font-weight="700" fill-opacity="${labelOpacity}">${component.ref}</text>
+      <path d="M${x + 9} ${gy(ay)}H${x + 36}M${x + 9} ${gy(ky)}H${x + 36}"
+        stroke="#4a5e4c" stroke-width="1.4" opacity="${labelOpacity}" fill="none"/>
+      <text x="${x + 40}" y="${gy(ay) + 4}" fill="#264c33" font-size="12" font-weight="700"
+        fill-opacity="${labelOpacity}">長腳 A＋</text>
+      <text x="${x + 40}" y="${gy(ky) + 4}" fill="#613b29" font-size="12" font-weight="700"
+        fill-opacity="${labelOpacity}">短腳 K－</text>
+    </g>`;
+}
+
+function drawPads(component, mirror, opacity) {
+  let result = '';
+  for (const [pin, point] of Object.entries(component.pads)) {
+    const x = gx(point[0], mirror);
+    const y = gy(point[1]);
+    const label = component.kind === 'LED' ? (pin === 'A' ? '+' : '−') : pin;
+    result += `<circle data-pad="${component.ref}.${pin}" cx="${x}" cy="${y}" r="5.5" fill="#f8fafc"
+      fill-opacity="${opacity}" stroke="#0f172a" stroke-width="1.5"
+      onmouseenter="showInfo('${component.ref} (${component.value}) — 腳位 ${pin}：正面座標 (Col ${point[0] + 1}, Row ${point[1] + 1})');showPlacement('${component.ref}')" />`;
+    if (['Q', 'D', 'LED', 'HDR'].includes(component.kind)) {
+      result += `<text x="${x}" y="${y + 3}" text-anchor="middle" fill="#0f172a" font-size="9" font-weight="700">${label}</text>`;
+    }
+  }
+  return result;
+}
+
+function showPlacement(ref) {
+  const component = placementParts.find(item => item.ref === ref);
+  if (!component) return;
+  placementSelect.value = ref;
+  const mirror = currentView === 'solder';
+  const viewNote = mirror ? '背面圖中的元件面投影。' : '依目前圖面的上、下方向放置。';
+  let model;
+  let centerX;
+  let centerY;
+  let description;
+  if (component.kind === 'Q') {
+    centerX = gx(component.pads.B[0], mirror);
+    centerY = gy(component.pads.B[1]);
+    const down = component.pads.C[0] > component.pads.E[0];
+    const order = Object.entries(component.pads).sort((a, b) => gx(a[1][0], mirror) - gx(b[1][0], mirror)).map(([pin]) => pin).join('–');
+    description = `${component.ref}（${component.value}）平面朝${down ? '下 ↓' : '上 ↑'}，畫面左至右為 ${order}。${viewNote}`;
+    model = drawTransistorModel(component, mirror, 1, 1);
+  } else {
+    const a = component.pads.A;
+    const k = component.pads.K;
+    centerX = (gx(a[0], mirror) + gx(k[0], mirror)) / 2;
+    centerY = (gy(a[1]) + gy(k[1])) / 2;
+    const longUp = a[1] < k[1];
+    description = `${component.ref} 長腳 A（＋）朝${longUp ? '上 ↑' : '下 ↓'}，短腳 K（－）及外殼平邊朝${longUp ? '下 ↓' : '上 ↑'}。${viewNote}`;
+    model = drawLedModel(component, mirror, 1, 1);
+  }
+  placementInfo.textContent = description;
+  placementPreview.innerHTML = `<svg viewBox="${centerX - 100} ${centerY - 82} 255 164"
+    xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${description}" font-family="Microsoft JhengHei, sans-serif">
+    ${model}${drawPads(component, mirror, 1)}</svg>`;
+}
+
+boardSvg.addEventListener('click', event => {
+  const model = event.target.closest('[data-component]');
+  if (model) showPlacement(model.dataset.component);
+});
+boardSvg.addEventListener('keydown', event => {
+  const model = event.target.closest('[data-component]');
+  if (model && (event.key === 'Enter' || event.key === ' ')) {
+    event.preventDefault();
+    showPlacement(model.dataset.component);
+  }
+});
+
+
+function render() {
+  const svg = document.getElementById('board-svg');
+  const mirror = (currentView === 'solder');
+  const showTraces = document.getElementById('chk-traces').checked;
+  const showComps = document.getElementById('chk-comps').checked;
+  const showStages = document.getElementById('chk-stages').checked;
+
+  let out = [];
+  const bgCol = '#e2efdc';
+  out.push(`<rect x="40" y="45" width="${DATA.ncol*30 + 20}" height="${DATA.nrow*30 + 20}" rx="14" fill="${bgCol}" stroke="#809777" stroke-width="2"/>`);
+
+  // 座標尺
+  for (let x = 0; x < DATA.ncol; x++) {
+    const cx = gx(x, mirror);
+    const num = x + 1;
+    const hi = (num === 1 || num % 5 === 0 || num === DATA.ncol);
+    const col = hi ? '#294d33' : '#52694b';
+    out.push(`<text x="${cx}" y="32" text-anchor="middle" fill="${col}" font-size="${hi?13:11}" font-weight="bold">${num}</text>`);
+    out.push(`<text x="${cx}" y="${gy(DATA.nrow-1)+42}" text-anchor="middle" fill="${col}" font-size="${hi?13:11}" font-weight="bold">${num}</text>`);
+  }
+  for (let y = 0; y < DATA.nrow; y++) {
+    const cy = gy(y);
+    const num = y + 1;
+    const hi = (y === 4 || y === 17 || y === 30 || num % 5 === 0 || num === 1);
+    const col = hi ? '#294d33' : '#52694b';
+    out.push(`<text x="30" y="${cy+4}" text-anchor="end" fill="${col}" font-size="${hi?13:11}" font-weight="bold">R${String(num).padStart(2,'0')}</text>`);
+    out.push(`<text x="${80 + DATA.ncol*30 + 6}" y="${cy+4}" text-anchor="start" fill="${col}" font-size="${hi?13:11}" font-weight="bold">R${String(num).padStart(2,'0')}</text>`);
+  }
+
+  // 級別框
+  if (showStages) {
+    for (let k = 1; k <= 10; k++) {
+      const odd = (k % 2 === 1);
+      const xMin = (k <= 5) ? (1 + 10*(k-1)) : (52 - (1 + 10*(k-6)) - 8);
+      const xMax = xMin + 8;
+      const yMin = (k <= 5) ? 4 : 17;
+      const yMax = (k <= 5) ? 17 : 30;
+      const x1 = Math.min(gx(xMin, mirror), gx(xMax, mirror)) - 12;
+      const x2 = Math.max(gx(xMin, mirror), gx(xMax, mirror)) + 12;
+      const y1 = gy(yMin) - 10;
+      const y2 = gy(yMax) + 10;
+      const dim = (activeStage !== 0 && activeStage !== k);
+      const stroke = odd ? '#9c471b' : '#1f6b9f';
+      const op = dim ? 0.18 : 0.75;
+      out.push(`<rect x="${x1}" y="${y1}" width="${x2-x1}" height="${y2-y1}" rx="8" fill="${stroke}" fill-opacity="${dim?0.02:0.07}" stroke="${stroke}" stroke-opacity="${op}" stroke-dasharray="5,4" stroke-width="1.5"/>`);
+      const ty = (k <= 5) ? (y1 - 6) : (y2 + 15);
+      out.push(`<text x="${(x1+x2)/2}" y="${ty}" text-anchor="middle" fill="${stroke}" fill-opacity="${dim ? 0.32 : 1}" font-size="12" font-weight="bold">第${k}級 Q${k} (${odd?'9012':'9013'})</text>`);
+    }
+  }
+
+  // 孔位
+  const blockedSet = new Set(DATA.blocked.map(p => p[0]+','+p[1]));
+  for (let x = 0; x < DATA.ncol; x++) {
+    for (let y = 0; y < DATA.nrow; y++) {
+      const cx = gx(x, mirror), cy = gy(y);
+      if (blockedSet.has(x+','+y)) {
+        out.push(`<circle cx="${cx}" cy="${cy}" r="5" fill="#ffe7e7" stroke="#ef4444" stroke-width="1.5"/>`);
+      } else {
+        const padCol = (currentView === 'front') ? '#849b7c' : '#9c733c';
+        out.push(`<circle cx="${cx}" cy="${cy}" r="4" fill="#f8fcf5" stroke="${padCol}" stroke-width="1.5"/>`);
+      }
+    }
+  }
+
+  // 走線
+  if (showTraces) {
+    const trOpBase = (currentView === 'front') ? 0.64 : 0.92;
+    for (const tr of DATA.traces) {
+      const stg = netStage(tr.net);
+      const dim = (activeStage !== 0 && stg !== 0 && stg !== activeStage && !(tr.net === 'B'+(activeStage+1) && stg === activeStage+1));
+      const op = dim ? 0.12 : trOpBase;
+      const col = netColor(tr.net);
+      const ptsStr = tr.pts.map(p => `${gx(p[0], mirror)},${gy(p[1])}`).join(' ');
+      out.push(`<polyline points="${ptsStr}" fill="none" stroke="${col}" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${op}"/>`);
+      for (const ep of tr.expanded) {
+        out.push(`<circle cx="${gx(ep[0], mirror)}" cy="${gy(ep[1])}" r="2.8" fill="#ffffff" fill-opacity="${op*0.8}"/>`);
+      }
+    }
+  }
+
+  // 元件
+  if (showComps) {
+    const compOpBase = (currentView === 'front') ? 0.96 : 0.48;
+    for (const c of DATA.comps) {
+      const dim = (activeStage !== 0 && c.stage && c.stage !== activeStage);
+      const op = dim ? 0.15 : compOpBase;
+      const labelOp = dim ? 0.32 : 1;
+      const pvals = Object.values(c.pads);
+      if (c.kind === 'R') {
+        const [p1, p2] = pvals;
+        const x1 = gx(p1[0], mirror), y1 = gy(p1[1]);
+        const x2 = gx(p2[0], mirror), y2 = gy(p2[1]);
+        const cx = (x1+x2)/2, cy = (y1+y2)/2;
+        out.push(`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#607866" stroke-width="3" stroke-opacity="${op}"/>`);
+        out.push(`<rect x="${cx-10}" y="${Math.min(y1,y2)+22}" width="20" height="${Math.abs(y2-y1)-44}" rx="6" fill="#ebd5b3" fill-opacity="${op}" stroke="#78532a" stroke-width="2" stroke-opacity="${op}"/>`);
+        out.push(`<text x="${cx}" y="${cy-2}" text-anchor="middle" fill="#0f172a" font-size="11" font-weight="bold" fill-opacity="${labelOp}">${c.ref}</text>`);
+        out.push(`<text x="${cx}" y="${cy+11}" text-anchor="middle" fill="#7c2d12" font-size="10" font-weight="bold" fill-opacity="${labelOp}">${c.value}</text>`);
+      } else if (c.kind === 'D') {
+        const pa = c.pads.A, pk = c.pads.K;
+        const xa = gx(pa[0], mirror), ya = gy(pa[1]);
+        const xk = gx(pk[0], mirror), yk = gy(pk[1]);
+        const cx = (xa+xk)/2, cy = (ya+yk)/2;
+        out.push(`<line x1="${xa}" y1="${ya}" x2="${xk}" y2="${yk}" stroke="#607866" stroke-width="3" stroke-opacity="${op}"/>`);
+        out.push(`<rect x="${Math.min(xa,xk)+18}" y="${cy-8}" width="${Math.abs(xk-xa)-36}" height="16" rx="4" fill="#ea580c" fill-opacity="${op}" stroke="#fed7aa" stroke-width="1.5" stroke-opacity="${op}"/>`);
+        const kx = (xk > xa) ? ( Math.max(xa,xk)-26 ) : ( Math.min(xa,xk)+20 );
+        out.push(`<rect x="${kx}" y="${cy-7}" width="6" height="14" fill="#0f172a" fill-opacity="${op}"/>`);
+        out.push(`<text x="${cx}" y="${cy-12}" text-anchor="middle" fill="#813511" font-size="11" font-weight="bold" fill-opacity="${labelOp}">${c.ref}</text>`);
+      } else if (c.kind === 'LED') {
+        out.push(drawLedModel(c, mirror, op, labelOp));
+      } else if (c.kind === 'Q') {
+        out.push(drawTransistorModel(c, mirror, op, labelOp));
+      } else if (c.kind === 'HDR') {
+        const pv = c.pads.V5, pg = c.pads.GND;
+        const xv = gx(pv[0], mirror), yv = gy(pv[1]);
+        const xg = gx(pg[0], mirror), yg = gy(pg[1]);
+        out.push(`<rect x="${xv-12}" y="${Math.min(yv,yg)-12}" width="24" height="54" rx="5" fill="#facc15" fill-opacity="${op}" stroke="#ffffff" stroke-width="2"/>`);
+      }
+      out.push(drawPads(c, mirror, op));
+    }
+  }
+
+  svg.innerHTML = out.join('');
+}
+
+function showInfo(txt) {
+  document.getElementById('hover-info').textContent = txt;
+}
+
+setView('front');
+</script>
+</body>
+</html>

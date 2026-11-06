@@ -1,0 +1,1744 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="yucs 菊鍊串接電路（9012 / 9013）原理動畫與麵包板實習互動教材">
+<title>菊鍊串接電路｜電子學實習講義</title>
+<style>
+:root {
+  color-scheme: light;
+  --paper: #f0f2f5;
+  --white: #fff;
+  --ink: #333333;
+  --muted: #62626c;
+  --theme: #5a2d82;
+  --theme-deep: #3a1a5c;
+  --theme-soft: #f5f0fc;
+  --theme-selected: #ede0ff;
+  --success: #26734d;
+  --line: #e0d0f0;
+  --rule: #8d73a8;
+  --warning: #764017;
+  --danger: #a12b35;
+  --led-green: #187443;
+  --led-green-soft: #e5f5e9;
+  --led-red: #b32338;
+  --led-red-soft: #fbe9ed;
+  --part-pnp: #643990;
+  --part-pnp-soft: #f1eaf8;
+  --part-npn: #006970;
+  --part-npn-soft: #e4f4f3;
+  --part-r: #78551d;
+  --part-r-soft: #fff3d7;
+  --part-d: #a13c17;
+  --flow-ib: #995c00;
+  --flow-push: #205c9d;
+  --flow-pull: #a02b74;
+  --rail-power: #8e3946;
+  --rail-ground: #415967;
+  --mono: "Cascadia Mono", Consolas, monospace;
+  font-family: "Microsoft JhengHei", "Noto Sans TC", "PingFang TC", sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+}
+* { box-sizing: border-box; }
+body { margin: 0; line-height: 1.6; }
+[hidden] { display: none !important; }
+button, select { font: inherit; color: inherit; }
+button, select, summary {
+  min-height: 38px;
+  border: 1px solid var(--rule);
+  border-radius: 7px;
+  background: var(--white);
+  padding: 5px 12px;
+}
+button, select, summary { cursor: pointer; }
+button:hover:not(:disabled), summary:hover, select:hover { background: var(--theme-soft); border-color: var(--theme); }
+button:disabled { opacity: .45; cursor: default; }
+button.primary { color: var(--white); background: var(--theme); border-color: var(--theme); }
+button.primary:hover:not(:disabled) { background: var(--theme-deep); }
+button[aria-pressed="true"] { color: var(--theme); background: var(--theme-selected); border-color: var(--theme); font-weight: 700; }
+:focus-visible { outline: 3px solid var(--theme); outline-offset: 3px; }
+.frame { width: calc(100% - 24px); margin-inline: auto; }
+.topbar { position: sticky; top: 0; z-index: 10; background: linear-gradient(110deg, var(--theme-deep), var(--theme)); border-bottom: 1px solid var(--theme-deep); }
+.topbar button, .topbar summary { color: var(--theme); }
+.topbar button.primary { color: var(--white); border-color: var(--theme-selected); }
+.topbar :is(.nav-center button, .top-actions > button, .teacher-tools > summary):focus-visible { outline-color: var(--white); }
+.masthead { min-height: 60px; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 6px 18px; padding-block: 7px; }
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.brand-mark { width: 34px; height: 34px; color: var(--white); flex: none; }
+.brand p { margin: 0; color: var(--theme-soft); font-size: .78rem; letter-spacing: .1em; }
+.brand h1 { margin: 0; color: var(--white); font-size: 1.25rem; line-height: 1.35; }
+.top-actions, .tool-group { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.top-actions { justify-content: flex-end; font-size: .88rem; }
+.teacher-tools { position: relative; }
+.teacher-tools summary { display: list-item; }
+.teacher-menu {
+  position: absolute; right: 0; top: calc(100% + 5px); z-index: 4;
+  min-width: max-content; padding: 8px; display: grid; gap: 6px;
+  background: var(--white); border: 1px solid var(--rule); border-radius: 9px;
+}
+.contents { background: var(--white); border-bottom: 1px solid var(--line); padding: 14px 0 18px; }
+.contents h2 { margin: 0 0 10px; font-size: 1rem; color: var(--theme); }
+.page-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.page-item { display: flex; align-items: baseline; gap: 10px; text-align: left; }
+.page-item[aria-current="step"] { border-color: var(--theme); background: var(--theme-selected); font-weight: 700; }
+.page-item .number { font: 700 .85rem var(--mono); color: var(--theme); flex: none; }
+
+.lesson { padding-block: 10px 16px; }
+.lesson-intro { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 24px; margin-bottom: 8px; }
+.lesson-intro .step-line { flex-basis: 100%; }
+.step-line { display: flex; align-items: center; gap: 10px; color: var(--theme); font-weight: 700; font-size: .88rem; }
+#pageNumber { font-family: var(--mono); border-right: 1px solid var(--rule); padding-right: 10px; }
+#lessonTitle {
+  margin: 0;
+  color: var(--theme-deep);
+  font: 700 clamp(1.42rem, 2.3vw, 2rem)/1.18 "Noto Serif TC", "PMingLiU", serif;
+  letter-spacing: .015em;
+}
+.observation { margin: 0; max-width: 55em; font-size: .94rem; line-height: 1.45; }
+.observation strong { color: var(--theme); margin-right: .6em; white-space: nowrap; }
+.media-pane { margin: 0; min-width: 0; }
+.pane-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 5px 16px; margin-bottom: 7px; }
+.pane-heading h3 { margin: 0; font-size: 1.06rem; color: var(--theme); }
+.status-pill { color: var(--success); font-weight: 700; font-variant-numeric: tabular-nums; }
+.status-pill.fault { color: var(--danger); }
+.media-viewport { background: var(--white); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0, 0, 0, .07); }
+.media-viewport :is(button, select, a):focus-visible { outline-offset: 1px; }
+.media-controls, .preset-bar {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px 15px;
+  padding: 8px 11px; border-bottom: 1px solid var(--line);
+  font-size: .875rem;
+}
+.media-controls .zoom-controls { margin-left: auto; }
+.zoom-controls button:first-child, .zoom-controls button:nth-of-type(2) { min-width: 36px; padding-inline: 7px; }
+#zoomLabel { min-width: 4ch; text-align: center; font-family: var(--mono); }
+.tool-label { font-weight: 700; color: var(--theme); }
+.preset-bar { gap: 6px; }
+.fault-controls select { max-width: 100%; }
+.canvas-stage {
+  display: grid; place-items: center; position: relative; overflow: hidden;
+  width: 100%; height: clamp(260px, 55svh, 680px); min-width: 0;
+  background: var(--white); user-select: none;
+}
+.canvas-stage.pannable { cursor: grab; touch-action: none; }
+.canvas-stage.panning { cursor: grabbing; }
+.canvas-stage > svg { display: block; width: 100%; height: 100%; }
+[data-view^="full"] .canvas-stage { height: clamp(225px, 44svh, 600px); }
+[data-mode^="breadboard"] .canvas-stage { height: clamp(230px, 50svh, 690px); background: var(--paper); }
+.canvas-stage:focus-visible { outline-offset: -4px; }
+.diagram-caption { margin: 0 0 7px; font-size: .84rem; line-height: 1.4; color: var(--muted); }
+.diag-banner { padding: 5px 8px; border-top: 1px solid var(--line); color: var(--theme); }
+.diag-banner.err { color: var(--danger); background: #fff7f5; }
+.diag-banner.warn { color: var(--warning); background: #fff9ef; }
+.chain-strip { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 4px; margin: 0; padding: 8px 10px; list-style: none; border-bottom: 1px solid var(--line); }
+.chain-strip li { min-width: 0; }
+.chain-cell { display: flex; align-items: center; justify-content: center; gap: 5px; width: 100%; padding: 4px 2px; font-size: .84rem; white-space: nowrap; }
+.chain-cell strong { font-family: var(--mono); }
+.lamp-dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: currentColor; }
+.chain-cell.green { color: var(--led-green); }
+.chain-cell.red { color: var(--led-red); }
+.chain-cell.off { color: var(--muted); }
+.chain-cell.off .lamp-dot { background: transparent; border: 1.5px solid var(--lamp-color); }
+.chain-cell.green { --lamp-color: var(--led-green); }
+.chain-cell.red { --lamp-color: var(--led-red); }
+.chain-strip .domino-cell { border: 1px solid var(--lamp-color); border-radius: 4px; }
+.domino-cell.green.lit { background: var(--led-green-soft); }
+.domino-cell.red.lit { background: var(--led-red-soft); }
+.chain-strip .domino-cell:not(.lit) .lamp-dot { background: transparent; border: 1.5px solid var(--lamp-color); }
+.current-legend { display: flex; flex-wrap: wrap; gap: 2px 9px; margin: 3px 0 8px; padding: 0; list-style: none; color: var(--muted); font-size: .88rem; }
+.current-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.legend-key { min-width: 1.45em; text-align: center; font-style: normal; font-weight: 800; }
+.legend-ib { color: var(--flow-ib); }
+.legend-push { color: var(--flow-push); }
+.legend-pull { color: var(--flow-pull); }
+.legend-green { color: var(--led-green); }
+.legend-red { color: var(--led-red); }
+.legend-pnp { color: var(--part-pnp); }
+.legend-npn { color: var(--part-npn); }
+.legend-r { color: var(--part-r); }
+.legend-d { color: var(--part-d); }
+.values-panel { padding: 6px 0 8px; border-top: 1px solid var(--line); }
+.values-panel h4 { margin: 0 0 7px; color: var(--theme); font-size: .96rem; }
+.values-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(133px, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.values-grid li { border-left: 2px solid var(--rule); padding-left: 8px; color: var(--muted); font-size: .83rem; }
+.values-grid strong { color: var(--theme); display: block; }
+.values-grid span { display: block; font-family: var(--mono); }
+
+.component-plate { padding-inline: 14px; }
+.component-section { padding-block: 14px; scroll-margin-top: 9rem; }
+.component-section + .component-section { border-top: 1px solid var(--line); }
+.component-section h4 { margin: 0 0 7px; color: var(--theme); font-size: 1.08rem; }
+.component-jump { margin: 0; }
+.component-jump a { color: var(--theme); padding: 4px 7px; text-underline-offset: .2em; }
+.plate-figures { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1fr); gap: 10px 18px; }
+.plate-figure { display: grid; grid-template-rows: auto 1fr auto; margin: 0; min-width: 0; }
+.plate-figure h5 { margin: 0 0 5px; color: var(--theme); font-size: .9rem; }
+.plate-art { min-width: 0; min-height: 112px; height: clamp(122px, 22vh, 222px); border: 1px solid var(--line); background: var(--theme-soft); display: grid; place-items: center; }
+.plate-art svg { width: 100%; height: 100%; display: block; }
+.plate-figure figcaption { margin-top: 5px; color: var(--muted); font-size: .87rem; line-height: 1.5; }
+.plate-detail { margin: 10px 0 0; color: var(--ink); font-size: .96rem; }
+.plate-detail strong { color: var(--theme); }
+.plate-warning { color: var(--warning); }
+.band-table { width: 100%; margin-top: 10px; border-collapse: collapse; font-size: .89rem; }
+.band-table caption { text-align: left; color: var(--theme); font-weight: 700; padding-bottom: 4px; }
+.band-table th, .band-table td { text-align: left; border-bottom: 1px solid var(--line); padding: 5px 8px; }
+.band-table th { color: var(--theme); background: var(--theme-soft); }
+
+.notes-pane { min-width: 0; width: min(100%, 46rem); margin: 18px auto 0; border-top: 2px solid var(--theme); padding-top: 9px; }
+.notes-pane > h3 { margin: 0 0 6px; color: var(--theme); font-size: 1.08rem; }
+.note-content { font-size: .98rem; line-height: 1.53; overflow-wrap: anywhere; }
+.note-content[contenteditable="true"] { background: var(--white); outline: 2px solid var(--theme); padding: 12px; }
+.note-content p { margin: 0 0 .65em; }
+.note-content h4 { font-size: 1.02rem; margin: .85em 0 .3em; color: var(--theme); }
+.note-content ul, .note-content ol { padding-inline-start: 1.45em; margin: .35em 0 1em; }
+.note-content li { margin-bottom: .35em; }
+.note-content blockquote { margin: .7em 0; padding: 5px 9px; border-left: 3px solid var(--theme); background: var(--theme-soft); }
+.note-content code { font-family: var(--mono); color: var(--theme); font-weight: 700; font-size: .92em; }
+.edit-hint { margin-top: 10px; color: var(--theme); font-size: .92rem; }
+.nav-center { display: flex; align-items: center; gap: 5px; white-space: nowrap; font-size: .88rem; }
+.nav-center button { padding-inline: 8px; }
+#navCount { color: var(--white); font: .88rem var(--mono); white-space: nowrap; }
+.site-footer { background: var(--white); color: var(--muted); border-top: 1px solid var(--line); font-size: .84rem; }
+.site-footer .frame { display: flex; flex-wrap: wrap; gap: 3px 18px; padding-block: 5px; }
+.noscript { border: 1px solid var(--rule); padding: 10px; }
+
+.schematic { color: var(--ink); }
+.schematic text { font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif; }
+.schematic .val-tag text { font-family: var(--mono); }
+.clickable-part { cursor: pointer; }
+.clickable-part:hover .part-outline, .clickable-part:focus-visible .part-outline { stroke: #27638d; stroke-width: 4; }
+.wire-hot { stroke: var(--rail-power); stroke-width: 3.2; }
+.wire-gnd { stroke: var(--rail-ground); stroke-width: 3.2; }
+.wire-on, .wire-ib, .wire-push, .wire-pull, .wire-led { stroke-width: 3; }
+.wire-on { stroke: #52616b; }
+.wire-ib { stroke: var(--flow-ib); }
+.wire-push { stroke: var(--flow-push); }
+.wire-pull { stroke: var(--flow-pull); }
+.wire-led { stroke: var(--branch-color); }
+.wire-off { stroke: #72808a; stroke-width: 2.3; stroke-dasharray: 5 4; }
+.val-tag { font-weight: 700; }
+#particleLayer { pointer-events: none; }
+
+@media (max-width: 850px) {
+  .page-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .media-controls .zoom-controls { margin-left: 0; }
+}
+@media (max-width: 760px) {
+  .masthead { grid-template-columns: minmax(0, 1fr) auto; }
+  .top-actions { grid-column: 1 / -1; justify-content: flex-start; }
+  .top-actions button, .top-actions summary { min-height: 32px; padding-block: 2px; }
+}
+@media (max-width: 600px) {
+  .frame { width: calc(100% - 28px); }
+  .masthead { gap: 4px 6px; }
+  .brand { gap: 6px; }
+  .brand-mark { display: none; }
+  .brand p { font-size: .71rem; letter-spacing: 0; }
+  .brand h1 { font-size: 1rem; }
+  .nav-center { font-size: .82rem; gap: 4px; }
+  .nav-center button { padding-inline: 6px; }
+  .component-section { scroll-margin-top: 10rem; }
+  .teacher-menu { left: 0; right: auto; }
+  .lesson { padding-top: 8px; }
+  .lesson-intro { gap: 3px 12px; margin-bottom: 8px; }
+  .chain-strip { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .canvas-stage { height: clamp(290px, 108vw, 430px); }
+  [data-view^="full"] .canvas-stage, [data-mode^="breadboard"] .canvas-stage { height: clamp(215px, 64vw, 355px); }
+  .plate-figures { grid-template-columns: 1fr; }
+  .plate-art { height: 160px; }
+  .band-table { font-size: .81rem; }
+  .band-table th, .band-table td { padding-inline: 4px; }
+}
+@media (min-width: 880px) and (min-height: 530px) {
+  body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+  .topbar, .contents, .site-footer { flex: none; }
+  .lesson {
+    display: grid;
+    flex: 1 1 0%;
+    min-height: 0;
+    grid-template-columns: minmax(0, 65fr) minmax(0, 35fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    column-gap: 16px;
+    padding-bottom: 8px;
+  }
+  .lesson-intro { grid-column: 1 / -1; }
+  .media-pane, .media-viewport { display: flex; flex-direction: column; min-height: 0; }
+  .media-viewport { flex: 1 1 0%; }
+  .pane-heading { margin-bottom: 4px; }
+  .media-controls, .preset-bar { flex: none; gap: 4px 8px; padding: 4px 6px; font-size: .8rem; }
+  .media-controls button, .media-controls select, .preset-bar button { min-height: 29px; padding: 2px 6px; }
+  .tool-group { gap: 4px; }
+  .chain-strip { flex: none; padding: 3px 5px; }
+  .chain-cell { font-size: .72rem; gap: 3px; min-height: 28px; }
+  .lesson .canvas-stage { flex: 1 1 0%; height: auto; min-height: 0; grid-template: minmax(0, 1fr) / minmax(0, 1fr); }
+  .canvas-stage > svg { min-width: 0; min-height: 0; }
+  .notes-pane { width: auto; min-height: 0; margin: 0; overflow: auto; scrollbar-gutter: stable; border-top: 0; border-left: 1px solid var(--line); padding: 0 8px 8px 12px; }
+  .component-plate { flex: 1 1 0%; min-height: 0; overflow: auto; scrollbar-gutter: stable; }
+  .component-section { scroll-margin-top: 6px; }
+  .plate-figures { gap: 6px; }
+  .plate-art { height: clamp(90px, 18vh, 185px); min-height: 0; }
+  .plate-figure figcaption { font-size: .78rem; }
+}
+@media (min-width: 880px) and (max-width: 1120px) and (min-height: 530px) {
+  .chain-strip { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="masthead frame">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 36 36" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M5 26h8V18h10v-8h8"/><circle cx="5" cy="26" r="3" fill="white"/><circle cx="31" cy="10" r="3" fill="white"/>
+      </svg>
+      <div>
+        <p>電子學實習・互動講義</p>
+        <h1>菊鍊串接電路</h1>
+      </div>
+    </div>
+    <nav class="nav-center" aria-label="單元翻頁">
+      <button type="button" id="prevBtn" title="鍵盤左方向鍵">← 上一頁</button>
+      <span id="navCount">1 / 8</span>
+      <button type="button" id="nextBtn" class="primary" title="鍵盤右方向鍵">下一頁 →</button>
+    </nav>
+    <div class="top-actions">
+      <button type="button" id="toggleMenuBtn" aria-expanded="false" aria-controls="sidebar">單元目錄</button>
+      <a href="./pcb-layout/">電路板 Layout</a>
+      <button type="button" id="fullBtn">全螢幕投影</button>
+      <details id="teacherTools" class="teacher-tools">
+        <summary>教師工具</summary>
+        <div class="teacher-menu">
+          <button type="button" id="editModeBtn" aria-pressed="false">編輯解說</button>
+        </div>
+      </details>
+    </div>
+  </div>
+</header>
+
+<nav id="sidebar" class="contents" aria-labelledby="contentsTitle" hidden>
+  <div class="frame">
+    <h2 id="contentsTitle">八個教學單元</h2>
+    <div id="pageList" class="page-list"></div>
+  </div>
+</nav>
+
+<main id="lesson" class="lesson frame">
+  <noscript><p class="noscript">請在瀏覽器啟用 JavaScript，以使用互動電路與離線圖片。</p></noscript>
+  <header class="lesson-intro">
+    <div class="step-line"><span id="pageNumber">01 / 08</span><span id="chapterLabel">元件辨識</span></div>
+    <h2 id="lessonTitle" tabindex="-1">從實物認識四種元件</h2>
+    <p class="observation"><strong>觀察任務</strong><span id="lessonObjective">找出外殼上的定位特徵，對照電路符號與麵包板位置。</span></p>
+  </header>
+
+  <section class="media-pane" aria-labelledby="mediaType">
+    <div class="pane-heading">
+      <h3 id="mediaType">元件圖鑑</h3>
+      <span id="statusPill" class="status-pill" role="status" hidden></span>
+    </div>
+    <div id="mediaViewport" class="media-viewport">
+      <div class="media-controls" aria-label="圖面操作">
+        <div id="faultControls" class="tool-group fault-controls" hidden>
+          <label for="faultPreset" class="tool-label">故障案例</label>
+          <select id="faultPreset">
+            <option value="">選擇案例</option>
+            <option value="q4">Q4 空焊</option>
+            <option value="d5">D5 插反</option>
+            <option value="led_rev">LED3、LED6 極性反接</option>
+            <option value="rg_swap">LED3、LED4 紅綠對調</option>
+            <option value="r10">R10（100 kΩ）漏插</option>
+          </select>
+        </div>
+        <div id="animControls" class="tool-group">
+          <button type="button" id="playPauseBtn" class="primary">暫停動畫</button>
+          <button type="button" id="replayDominoBtn" hidden>重播逐級導通</button>
+          <label for="speedSelect">速度</label>
+          <select id="speedSelect">
+            <option value="0.5">0.5×</option>
+            <option value="1" selected>1×</option>
+            <option value="1.8">1.8×</option>
+          </select>
+        </div>
+        <div id="circuitControls" class="tool-group" hidden>
+          <button type="button" id="toggleValuesBtn" aria-pressed="false">顯示估算值</button>
+          <button type="button" id="resetFaultsTopBtn" hidden>重置故障</button>
+        </div>
+        <div id="cameraControls" class="tool-group" hidden></div>
+        <div id="zoomControls" class="tool-group zoom-controls">
+          <button type="button" id="zoomOutBtn" aria-label="縮小圖面" title="縮小圖面">−</button>
+          <span id="zoomLabel">100%</span>
+          <button type="button" id="zoomInBtn" aria-label="放大圖面" title="放大圖面（Ctrl＋滾輪也可縮放）">＋</button>
+          <button type="button" id="zoomResetBtn" title="還原縮放與位置">適合頁面</button>
+        </div>
+      </div>
+      <div id="presetBar" class="preset-bar" hidden></div>
+      <ul id="chainStrip" class="chain-strip" aria-label="十級燈號" hidden></ul>
+      <nav id="componentLinks" class="preset-bar component-jump" aria-label="本頁元件索引" hidden>
+        <a href="#part-bjt">電晶體</a>
+        <a href="#part-diode">二極體</a>
+        <a href="#part-led">LED</a>
+        <a href="#part-resistor">電阻</a>
+      </nav>
+      <div id="componentPlate" class="component-plate" hidden></div>
+      <div id="canvasStage" class="canvas-stage" tabindex="0" role="group" aria-label="可縮放的電路圖面"></div>
+</div>
+  </section>
+
+  <section id="notes" class="notes-pane" aria-labelledby="notesTitle" tabindex="0">
+    <h3 id="notesTitle">講義解說</h3>
+    <p id="diagramCaption" class="diagram-caption"></p>
+      <section id="valuesPanel" class="values-panel" aria-label="模型估算電氣數值" hidden></section>
+      <div id="diagBanner" class="diag-banner" role="status" hidden></div>
+    <ul id="currentLegend" class="current-legend" aria-label="電路圖例" hidden>
+      <li><i class="legend-key legend-ib" aria-hidden="true">→</i>啟動基極電流 Ib</li>
+      <li><i class="legend-key legend-push" aria-hidden="true">→</i>往右推</li>
+      <li><i class="legend-key legend-pull" aria-hidden="true">←</i>往左拉</li>
+      <li><i class="legend-key legend-green" aria-hidden="true">→</i>綠 LED 主電流</li>
+      <li><i class="legend-key legend-red" aria-hidden="true">→</i>紅 LED 主電流</li>
+      <li><i class="legend-key legend-pnp" aria-hidden="true">Q</i>PNP</li>
+      <li><i class="legend-key legend-npn" aria-hidden="true">Q</i>NPN</li>
+      <li><i class="legend-key legend-r" aria-hidden="true">R</i>電阻</li>
+      <li><i class="legend-key legend-d" aria-hidden="true">D</i>二極體</li>
+      <li>虛線表示該支路未導通或有故障</li>
+    </ul>
+    <div id="noteEditor" class="note-content" contenteditable="false" aria-labelledby="notesTitle"></div>
+    <p id="editHint" class="edit-hint" hidden>可直接編輯本段。匯出時請把新版 HTML 放在教材圖片同一層。</p>
+    <button type="button" id="saveHtmlBtn" class="primary" hidden>匯出新版 HTML</button>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="frame">
+    <span>© __PAGES_BUILD_YEAR__ yucs. 版權所有。</span>
+    <span id="deploymentStamp">程式部署時間：<time datetime="__PAGES_BUILD_DATETIME__">__PAGES_BUILD_TIME__</time></span>
+    <span id="exportStamp">互動教材</span>
+  </div>
+</footer>
+
+
+<script id="pagesData" type="application/json">
+[
+  {
+    "id": "p01",
+    "chapter": "元件辨識",
+    "title": "從實物認識四種元件",
+    "mode": "cards",
+    "mediaLabel": "元件圖鑑",
+    "objective": "看出外殼上的定位特徵，對照電路符號與麵包板位置。",
+    "caption": "上方十級燈號示意 Q1 到 Q10 的導通順序。往下捲動可依序查看四種元件的實物、外觀與符號。",
+    "notesHtml": "<p>菊鍊串接（Daisy Chain）從 <code>Q1</code> 開始，由前級控制下一級，直到 <code>Q10</code>。完整導通時，五顆綠燈和五顆紅燈都會亮起。</p>\n<h4>先核對每塊板的用量</h4>\n<ul><li>電晶體 10 顆。奇數級用 9012（PNP），偶數級用 9013（NPN）。</li>\n<li>LED 10 顆。奇數級用綠燈，偶數級用紅燈。</li>\n<li>電阻用 1 kΩ × 10、10 kΩ × 10、100 kΩ × 9。二極體用 1N4148 × 9。</li></ul>\n<p>材料表每人備料包含 100 kΩ 和 1N4148 各 10 顆。上面的用量依原理圖十級電路計算。原理圖使用 SMD 料號，元件圖鑑以麵包板直插版為準。</p>\n<blockquote>接線前，請依實物印字和廠商腳位圖核對電晶體。現有照片可對照外形及位置，教室實際批次與 LED 尺寸待確認。</blockquote>"
+  },
+  {
+    "id": "p02",
+    "chapter": "第 1 級自啟動",
+    "title": "Q1 如何先導通？",
+    "mode": "circuit",
+    "view": "stage1",
+    "mediaLabel": "第 1 級電流路徑",
+    "objective": "沿著 R1 找到基極電流，再追蹤 LED1 的主電流。",
+    "caption": "Ib 沿 R1 流向 GND。Ic 經 R2 和 LED1 流向 GND。",
+    "notesHtml": "<ol><li><strong>基極電流 Ib</strong>。Q1 的射極 E 接 +5 V，基極 B 經 <code>R1（10 kΩ）</code>接地。基極電流依 +5 V → E → B → R1 → GND 流動。模型估算約 0.43 mA。</li>\n<li><strong>LED 主電流 Ic</strong>。Q1 導通後，集極 C 在模型中約為 4.9 V。電流經 <code>R2（1 kΩ）</code>與 <code>LED1</code> 流向 GND，模型估算約 2.9 mA。</li></ol>\n<blockquote>先猜測 R1 斷路後哪條路徑會消失，再點圖上的 R1 或 Q1 觀察結果。</blockquote>"
+  },
+  {
+    "id": "p03",
+    "chapter": "奇數級推偶數級",
+    "title": "Q1 如何讓 Q2 導通？",
+    "mode": "circuit",
+    "view": "stage1_2",
+    "mediaLabel": "第 1 到第 2 級耦合",
+    "objective": "找出流入 Q2 基極的路徑，對照 D1 的陰極位置。",
+    "caption": "推（Push）指控制電流經 R3、D1 由左向右流入 B2。",
+    "notesHtml": "<ol><li>Q1 導通時，集極 C1 分出一條控制路徑，經 <code>R3（10 kΩ）</code>、<code>D1</code> 流入 Q2 的基極 B，再經射極 E 入地。</li>\n<li>D1 在此圖中由左往右順向導通。玻璃管右端黑環是陰極 K，對應符號右端的直線。</li>\n<li>Q2 導通時，LED2 的主電流由 +5 V 經 LED2、<code>R5（1 kΩ）</code>及 Q2 流向 GND。<code>R4（100 kΩ）</code>在前級停止驅動時將 B2 拉向 GND。</li></ol>\n<blockquote>點一下 D1 模擬插反，觀察 LED1 與 LED2 的燈號。</blockquote>"
+  },
+  {
+    "id": "p04",
+    "chapter": "偶數級拉奇數級",
+    "title": "D2 的黑環為什麼朝左？",
+    "mode": "circuit",
+    "view": "stage2_3",
+    "mediaLabel": "第 2 到第 3 級耦合",
+    "objective": "從 Q3 的基極向左追蹤電流，找出 D2 的陰極。",
+    "caption": "拉（Pull）指控制電流由 B3 流出，經 D2、R6 進入 Q2。",
+    "notesHtml": "<p>Q3 是 PNP，射極 E 接 +5 V。當 Q2 導通時，控制電流從 +5 V → E3 → B3 流出，向左經 <code>D2</code> 與 <code>R6（10 kΩ）</code>進入 Q2 的集極 C2，再由 E2 入地。</p>\n<ul><li>奇數級送往偶數級。D1、D3、D5、D7、D9 的黑環朝右。</li>\n<li>偶數級連到下一奇數級。D2、D4、D6、D8 的黑環朝左。</li></ul>\n<p>以上左右方向依教材圖與第 7 單元的麵包板照片視角。</p>"
+  },
+  {
+    "id": "p05",
+    "chapter": "十級串接",
+    "title": "看十級電路逐級導通",
+    "mode": "circuit",
+    "view": "full_domino",
+    "mediaLabel": "Q1 到 Q10 全鏈電路",
+    "objective": "重播一次，指出第一顆亮燈，以及最後亮起的是哪一級。",
+    "caption": "全覽用來看導通順序。可切換左半、右半或放大圖面閱讀元件編號。",
+    "notesHtml": "<p>奇數級 PNP 提供下一個 NPN 的基極電流，偶數級 NPN 提供下一個 PNP 的基極電流回路。這兩種級間接法交替出現。</p>\n<p>每級 LED 都透過自己的電晶體與限流電阻接到電源，級間連接傳遞的是控制訊號。可開啟估算值，比較奇數級導通時較高的集極電位與偶數級較低的集極電位。</p>\n<blockquote>畫面用慢動作顯示順序。實板的亮度、電流、電壓與導通時間需以實測確認。</blockquote>"
+  },
+  {
+    "id": "p06",
+    "chapter": "故障排查",
+    "title": "用燈號縮小故障範圍",
+    "mode": "circuit",
+    "view": "full_fault",
+    "mediaLabel": "十級燈號與故障圖",
+    "objective": "先預測哪幾顆燈會滅，再選擇案例核對燈號。",
+    "caption": "選擇案例會放大相關級。點選上方 Q 編號可換到其他級，選全覽可回到整張電路。",
+    "notesHtml": "<ol>\n<li><strong>Q4 空焊</strong>。LED1～LED3 亮，LED4～LED10 滅。先檢查第一顆熄滅燈號所在的級。</li>\n<li><strong>D5 插反</strong>。LED1～LED5 亮，LED6～LED10 滅。先檢查 LED5 與 LED6 之間的耦合路徑。</li>\n<li><strong>LED3、LED6 極性反接</strong>。只有這兩顆熄滅，後級仍會亮。實作時也可檢查 LED 的限流支路。</li>\n<li><strong>LED3、LED4 紅綠對調</strong>。10 顆都亮，第 3 級變紅、第 4 級變綠。</li>\n<li><strong>R10（100 kΩ）漏插</strong>。前級仍在驅動時，燈號可能看不出問題。實作時應逐一核對 B–E 間的 100 kΩ 電阻。</li>\n</ol>\n<p>以上為單一故障類型的示範。找完一個案例，按「重置故障」回到正常狀態，再進行下一次觀察。</p>"
+  },
+  {
+    "id": "p07",
+    "chapter": "麵包板接線",
+    "title": "用實拍圖對照接線位置",
+    "mode": "breadboard",
+    "mediaLabel": "麵包板實拍與標註",
+    "objective": "先找出 +5 V、GND 與中段跨接線，再切換其他圖層檢查。",
+    "caption": "預設顯示電源軌。可單獨查看電晶體、二極體或重複配置。",
+    "notesHtml": "<ol>\n<li><strong>電源軌</strong>。本圖上方為 +5 V，下方為 GND。觀察第 31～34 格附近的兩條跨接線；實作前可用電表確認電源軌的連通範圍。</li>\n<li><strong>電晶體</strong>。上排是奇數級 9012，下排是偶數級 9013。依圖面編號定位，再用第 1 單元的觀看方向與手上的料件核對腳位。</li>\n<li><strong>二極體</strong>。本圖上排 D1、D3、D5、D7、D9 黑環朝右，下排 D2、D4、D6、D8 黑環朝左。</li>\n<li><strong>跨槽元件</strong>。在圖上找出跨過中央凹槽的電阻與跳線。逐組確認前後級的接法與同列孔位。</li></ol>"
+  },
+  {
+    "id": "p08",
+    "chapter": "實作參考",
+    "title": "放大查看實作孔位",
+    "mode": "breadboard_clean",
+    "mediaLabel": "麵包板原圖與高對比圖",
+    "objective": "切到左半或右半，確認正在接的元件腳插在哪一列。",
+    "caption": "原始照片可對照元件外觀。高對比與加強對比可用來看孔位。",
+    "notesHtml": "<p>選擇全板、左半或右半，再用放大與平移核對目標孔位。顏色難辨時可切換原始照片，並用元件本體標記和第 1 單元的圖鑑確認。</p>"
+  }
+]
+</script>
+<script>
+(function(){
+  "use strict";
+
+  const STAGES = [
+    { k:1,  q:"Q1",  pnp:true,  model:"9012", rBe:"R1",  rBeVal:"10kΩ",  rLed:"R2",  led:"LED1",  rCouple:"R3",  diode:"D1" },
+    { k:2,  q:"Q2",  pnp:false, model:"9013", rBe:"R4",  rBeVal:"100kΩ", rLed:"R5",  led:"LED2",  rCouple:"R6",  diode:"D2" },
+    { k:3,  q:"Q3",  pnp:true,  model:"9012", rBe:"R8",  rBeVal:"100kΩ", rLed:"R7",  led:"LED3",  rCouple:"R9",  diode:"D3" },
+    { k:4,  q:"Q4",  pnp:false, model:"9013", rBe:"R10", rBeVal:"100kΩ", rLed:"R11", led:"LED4",  rCouple:"R12", diode:"D4" },
+    { k:5,  q:"Q5",  pnp:true,  model:"9012", rBe:"R14", rBeVal:"100kΩ", rLed:"R13", led:"LED5",  rCouple:"R15", diode:"D5" },
+    { k:6,  q:"Q6",  pnp:false, model:"9013", rBe:"R16", rBeVal:"100kΩ", rLed:"R17", led:"LED6",  rCouple:"R18", diode:"D6" },
+    { k:7,  q:"Q7",  pnp:true,  model:"9012", rBe:"R20", rBeVal:"100kΩ", rLed:"R19", led:"LED7",  rCouple:"R21", diode:"D7" },
+    { k:8,  q:"Q8",  pnp:false, model:"9013", rBe:"R22", rBeVal:"100kΩ", rLed:"R23", led:"LED8",  rCouple:"R24", diode:"D8" },
+    { k:9,  q:"Q9",  pnp:true,  model:"9012", rBe:"R26", rBeVal:"100kΩ", rLed:"R25", led:"LED9",  rCouple:"R27", diode:"D9" },
+    { k:10, q:"Q10", pnp:false, model:"9013", rBe:"R28", rBeVal:"100kΩ", rLed:"R29", led:"LED10", rCouple:null,  diode:null }
+  ];
+
+  const pages = JSON.parse(document.getElementById("pagesData").textContent);
+  const DRAFT_KEY = `yucs_daisy_chain_notes_v2:${location.pathname}:${document.body.dataset.notesEdition || "release"}`;
+  try {
+    const saved = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
+    if (saved && typeof saved === "object") {
+      pages.forEach(p => { if (typeof saved[p.id] === "string") p.notesHtml = saved[p.id]; });
+    }
+  } catch (_) {}
+
+  const state = {
+    pageIndex: 0,
+    playing: true,
+    speed: 1,
+    showValues: false,
+    editing: false,
+    zoom: 1,
+    panX: 0,
+    panY: 0,
+    cameraSlice: "all",
+    bbLayer: "power",
+    focusStage: 0,
+    bbContrast: "high",
+    bbSlice: "all",
+    dominoStep: 10,
+    dominoTimer: null,
+    particles: [],
+    faults: { r1: false, q: {}, d: {}, led: {}, rbe: {} }
+  };
+
+  function hasAnyFault() {
+    if (state.faults.r1) return true;
+    for (let k = 1; k <= 10; k++) {
+      if (state.faults.q[k] || state.faults.d[k] || state.faults.led[k] || state.faults.rbe[k]) return true;
+    }
+    return false;
+  }
+
+  function clearAllFaults() {
+    state.faults = { r1: false, q: {}, d: {}, led: {}, rbe: {} };
+  }
+
+  function solveCircuit() {
+    const qOn = {}, ledOn = {}, canCouple = {}, floatingBase = {}, ibVal = {}, icVal = {}, vcVal = {};
+    let totalCurrent = 0;
+    let activeLeds = 0;
+
+    for (let k = 1; k <= 10; k++) {
+      const st = STAGES[k - 1];
+      const allowedByDomino = state.dominoStep >= k;
+      let driveOk = false;
+      if (k === 1) {
+        driveOk = !state.faults.r1;
+      } else {
+        driveOk = !!canCouple[k - 1];
+      }
+
+      if (!driveOk && k > 1 && state.faults.rbe[k]) {
+        floatingBase[k] = true;
+      }
+
+      qOn[k] = allowedByDomino && driveOk && !state.faults.q[k];
+      const lf = state.faults.led[k];
+      ledOn[k] = qOn[k] && lf !== "rev";
+      canCouple[k] = k < 10 ? (qOn[k] && !state.faults.d[k]) : false;
+
+      if (k === 1) {
+        ibVal[1] = (!state.faults.r1 && !state.faults.q[1] && allowedByDomino) ? 0.43 : 0;
+        totalCurrent += ibVal[1];
+      } else {
+        const cCur = (qOn[k - 1] && !state.faults.d[k - 1] && !state.faults.q[k] && allowedByDomino) ? 0.355 : 0;
+        const bleed = (!state.faults.rbe[k] && cCur > 0) ? 0.007 : 0;
+        ibVal[k] = Math.max(0, +(cCur - bleed).toFixed(3));
+        totalCurrent += cCur;
+      }
+
+      const isGreenActual = lf === "swap" ? !st.pnp : st.pnp;
+      const iLed = ledOn[k] ? (isGreenActual ? 2.9 : 3.0) : 0;
+      if (ledOn[k]) activeLeds++;
+      totalCurrent += iLed;
+
+      const nextDraw = (k < 10 && qOn[k] && !state.faults.d[k] && !state.faults.q[k + 1] && state.dominoStep >= k + 1) ? 0.355 : 0;
+      icVal[k] = +(iLed + nextDraw).toFixed(2);
+
+      if (st.pnp) {
+        vcVal[k] = qOn[k] ? "4.9V" : "0V";
+      } else {
+        vcVal[k] = qOn[k] ? "0.1V" : "浮接(無迴路)";
+      }
+    }
+
+    let diag = { level: "ok", text: `全電路導通正常：點亮 <strong>${activeLeds} / 10</strong> 顆 LED（綠燈 ×5 ＋ 紅燈 ×5），總電流約 <strong>${totalCurrent.toFixed(1)} mA</strong>。` };
+    if (state.dominoStep < 10) {
+      diag = {
+        level: "ok",
+        text: state.dominoStep === 0
+          ? "準備通電啟動：觀察信號從第 1 棒 Q1 開始往右骨牌傳遞..."
+          : `骨牌逐級傳遞中：目前已導通至 <strong>第 ${state.dominoStep} 級（${STAGES[state.dominoStep - 1].q} → ${STAGES[state.dominoStep - 1].led}）</strong>`
+      };
+    } else if (state.faults.r1) {
+      diag = { level: "err", text: "故障診斷：啟動電阻 <strong>R1 (10kΩ) 空焊斷路</strong> ➔ Q1 基極無啟動電流，導致 <strong>LED1～LED10 全部熄滅</strong>！" };
+    } else {
+      const messages = [];
+      let level = "ok";
+      for (let k = 1; k <= 10; k++) {
+        if (state.faults.q[k]) {
+          level = "err";
+          messages.push(`<strong>Q${k} (${STAGES[k-1].model}) 腳位斷路</strong>：本級及後級失去驅動，<strong>LED${k}～LED10 熄滅</strong>。`);
+          break;
+        }
+        if (k < 10 && state.faults.d[k]) {
+          level = "err";
+          messages.push(`<strong>D${k} (1N4148) 插反或級間斷路</strong>：級間驅動中斷，<strong>LED${k+1}～LED10 熄滅</strong>。`);
+          break;
+        }
+      }
+      const revList = [], swapList = [];
+      for (let k = 1; k <= 10; k++) {
+        if (state.faults.led[k] === "rev") revList.push(`LED${k}(${k % 2 ? '綠' : '紅'})`);
+        else if (state.faults.led[k] === "swap") swapList.push(`LED${k}`);
+      }
+      if (revList.length) {
+        if (level === "ok") level = "warn";
+        messages.push(`<strong>${revList.join("、")} 正負極焊反</strong>：所列 LED 熄滅。級間訊號依各級電晶體與耦合路徑的狀態傳遞。`);
+      }
+      if (swapList.length) {
+        if (level === "ok") level = "warn";
+        messages.push(`<strong>${swapList.join("、")} 紅綠對調</strong>：標示的 LED 換色，燈號依各級導通狀態顯示。`);
+      }
+      for (let k = 2; k <= 10; k++) {
+        if (state.faults.rbe[k]) {
+          if (level === "ok") level = "warn";
+          messages.push(`<strong>${STAGES[k-1].rBe} (100kΩ) 漏插</strong>：前級驅動仍在時，燈號可能看不出差異。若驅動中斷，實板的 Q${k} 基極可能浮接。`);
+        }
+      }
+      if (messages.length) diag = { level, text: "🔍 " + messages.join(" ") };
+    }
+
+    return { qOn, ledOn, canCouple, floatingBase, ibVal, icVal, vcVal, totalCurrent, activeLeds, diag };
+  }
+
+  function renderComponentPlate(key) {
+    const svg = (viewBox, label, art) => `<svg viewBox="${viewBox}" role="img" aria-label="${label}"
+      xmlns="http://www.w3.org/2000/svg" font-family="Microsoft JhengHei, sans-serif" fill="#20313c">${art}</svg>`;
+  
+    const photo = (x, width, viewBox, label) => `
+      <svg x="${x}" y="3" width="${width}" height="120" viewBox="${viewBox}" overflow="hidden">
+        <image href="菊鍊串接電路.jpg" width="3264" height="1766"/>
+      </svg>
+      <text x="${x + width / 2}" y="145" text-anchor="middle" font-size="14" font-weight="700">${label}</text>`;
+  
+    const figure = (title, art, caption) => `
+      <figure class="plate-figure">
+        <h5>${title}</h5>
+        <div class="plate-art">${art}</div>
+        <figcaption>${caption}</figcaption>
+      </figure>`;
+  
+    const transistorBody = (x, model) => `
+      <g transform="translate(${x},0)">
+        <path d="M25 45Q28 20 66 17Q104 20 107 45L107 76H25Z" fill="#24272a"/>
+        <path d="M30 36H102L106 46V77Q106 84 99 84H33Q26 84 26 77V46Z" fill="url(#moldedBody)" stroke="#14181b" stroke-width="1.6"/>
+        <path d="M31 39H101" stroke="#747b80" opacity=".6"/>
+        <path d="M47 84V125M66 84V125M85 84V125" fill="none" stroke="#636e75" stroke-width="5"/>
+        <path d="M46 84V124M65 84V124M84 84V124" stroke="#cdd1d0" stroke-width="1.4"/>
+        <text x="66" y="64" text-anchor="middle" fill="#edf0eb" font-family="monospace" font-size="18" font-weight="700">${model}</text>
+        <text x="47" y="144" text-anchor="middle" font-size="13" font-weight="700">E</text>
+        <text x="66" y="144" text-anchor="middle" font-size="13" font-weight="700">B</text>
+        <text x="85" y="144" text-anchor="middle" font-size="13" font-weight="700">C</text>
+      </g>`;
+  
+    const transistorSymbol = (x, type, pnp) => `
+      <g transform="translate(${x},0)" fill="none" stroke="var(--part-${pnp ? 'pnp' : 'npn'})" stroke-width="2.3" stroke-linecap="round">
+        <circle cx="62" cy="69" r="30" fill="var(--part-${pnp ? 'pnp' : 'npn'}-soft)"/>
+        <path d="M20 69H51M51 50V88M51 59L78 38V23M51 80L78 101V115"/>
+        <path d="${pnp ? 'M55 56L62 45L68 53Z' : 'M77 100L65 97L71 90Z'}" fill="var(--part-${pnp ? 'pnp' : 'npn'})" stroke="none"/>
+        <g stroke="none" fill="var(--part-${pnp ? 'pnp' : 'npn'})" font-size="13" font-weight="700">
+          <text x="13" y="65">B</text>
+          <text x="84" y="27">${pnp ? "E" : "C"}</text>
+          <text x="84" y="117">${pnp ? "C" : "E"}</text>
+          <text x="62" y="144" text-anchor="middle">${type}</text>
+        </g>
+      </g>`;
+  
+    const diodeSymbol = (led) => svg("0 0 282 152", led ? "LED 符號及出光箭頭，陽極 A 在左，陰極 K 在右" : "二極體符號，陽極 A 在左，陰極 K 在右", `
+      <g fill="none" stroke="${led ? '#20313c' : 'var(--part-d)'}" stroke-width="3" stroke-linecap="round">
+        <path d="M42 78H111M161 78H238"/>
+        <path d="M111 53L160 78L111 103Z" fill="${led ? '#20313c' : 'var(--part-d)'}" stroke-linejoin="round"/>
+        <path d="M160 52V104"/>
+        ${led ? '<path d="M123 49L144 24m-9 2 9-2-1 9M149 52l21-25m-9 2 9-2-1 9"/>' : ""}
+      </g>
+      <text x="42" y="125" font-size="17" font-weight="700">A 陽極</text>
+      <text x="238" y="125" text-anchor="end" font-size="17" font-weight="700">K 陰極</text>`);
+  
+    const resistorBody = (y, multiplierColor, value) => `
+      <g transform="translate(8,${y})">
+        <path d="M14 18H218" stroke="#78838a" stroke-width="4"/>
+        <path d="M52 7Q56 3 65 3H76L88 8H151L163 3H174Q184 3 188 11V25Q184 33 174 33H163L151 28H88L76 33H65Q56 33 52 29Z"
+          fill="url(#resistorCoat)" stroke="#917750" stroke-width="1.4"/>
+        <path d="M82 6V30" stroke="#754322" stroke-width="9"/>
+        <path d="M105 8V28" stroke="#252324" stroke-width="9"/>
+        <path d="M129 8V28" stroke="${multiplierColor}" stroke-width="9"/>
+        <path d="M166 3V33" stroke="#ad882b" stroke-width="9"/>
+        <path d="M60 10H176" stroke="#fff9e9" stroke-width="2" opacity=".32"/>
+        <text x="239" y="24" font-size="15" font-weight="700">${value}</text>
+      </g>`;
+  
+    let figures;
+    let detail;
+    switch (key) {
+      case "diode":
+        figures = [
+          figure("麵包板局部（暫用）", svg("0 0 300 152", "實拍 D1 黑環在右、D2 黑環在左",
+            photo(2, 144, "385 477 159 89", "D1") + photo(154, 144, "627 681 163 97", "D2")), "D1、D2 取自同一塊麵包板。"),
+          figure("二極體放大示意", svg("0 0 320 152", "玻璃二極體，右側黑環標出陰極 K", `
+            <defs><linearGradient id="glassBody" x2="0" y2="1"><stop stop-color="#fdd2a7"/><stop offset=".35" stop-color="#dc6e35"/><stop offset=".74" stop-color="#913615"/><stop offset="1" stop-color="#c35f33"/></linearGradient></defs>
+            <path d="M25 63H294" stroke="#727e85" stroke-width="5"/>
+            <path d="M92 48Q87 48 87 63Q87 77 92 78H229Q235 76 235 63Q235 49 229 48Z" fill="url(#glassBody)" stroke="#8d512e" stroke-width="1.3"/>
+            <path d="M107 63H145m24 0h46" stroke="#572b19" stroke-width="4"/>
+            <path d="M96 53H226" stroke="#ffe5c6" stroke-width="2" opacity=".6"/>
+            <path d="M214 48V78" stroke="#292929" stroke-width="11"/>
+            <path d="M214 80V105H264" fill="none" stroke="#20313c" stroke-width="1.5"/>
+            <text x="264" y="126" text-anchor="end" font-size="17" font-weight="700">黑環 K</text>
+            <text x="25" y="94" font-size="16" font-weight="700">A</text>
+            <text x="294" y="94" text-anchor="end" font-size="16" font-weight="700">K</text>`), "1N4148 的 DO-35 外形範例。"),
+          figure("電路符號", diodeSymbol(false), "K 端的直線對應外殼黑環。")
+        ];
+        detail = `<p class="plate-detail"><strong>插板前</strong> 比對黑環與圖上的 K 端。依本教材視角，D1 的黑環朝右，D2 的黑環朝左。</p>`;
+        break;
+      case "led":
+        figures = [
+          figure("麵包板局部（暫用）", svg("0 0 300 152", "實拍 LED1 綠燈、LED2 紅燈",
+            photo(2, 144, "201 807 168 202", "LED1 綠") + photo(154, 144, "427 183 178 220", "LED2 紅")), "照片用來定位顏色與安裝位置。"),
+          figure("圓頂外殼放大示意", svg("0 0 330 152", "常見圓頂 LED 側視及底視，長腳是 A，短腳及底緣平邊在 K 側", `
+            <defs><linearGradient id="ledLens" x2="0" y2="1"><stop stop-color="#d1ebd3"/><stop offset=".5" stop-color="#79af8d"/><stop offset="1" stop-color="#3d7556"/></linearGradient></defs>
+            <path d="M94 80V126M125 80V110" stroke="#78838a" stroke-width="5"/>
+            <path d="M94 82V47L108 58M125 82V54H112" fill="none" stroke="#41534e" stroke-width="2.3"/>
+            <path d="M74 68V53A37 37 0 0 1 148 53V68H154V84H68V68Z" fill="url(#ledLens)" fill-opacity=".83" stroke="#37684d" stroke-width="2"/>
+            <path d="M83 51C86 39 95 31 105 28" fill="none" stroke="#f2fff3" stroke-width="3" stroke-linecap="round"/>
+            <path d="M92 123H66m61-19h43" fill="none" stroke="#20313c" stroke-width="1.4"/>
+            <text x="59" y="129" text-anchor="end" font-size="14" font-weight="700">長腳 A</text>
+            <text x="172" y="109" font-size="14" font-weight="700">短腳 K</text>
+            <path d="M284 35A27 27 0 1 0 284 75Z" fill="#cee5d1" stroke="#37684d" stroke-width="2"/>
+            <path d="M284 54H313" stroke="#20313c" stroke-width="1.3"/>
+            <text x="309" y="45" text-anchor="end" font-size="13" font-weight="700">K</text>
+            <text x="267" y="97" text-anchor="middle" font-size="13" font-weight="700">底視・平邊</text>`), "常見封裝範例。側視與底視採同一極性對照。"),
+          figure("電路符號", diodeSymbol(true), "K 為陰極，兩個外指箭頭表示發光。")
+        ];
+        detail = `<p class="plate-detail"><strong>插板前</strong> 腳未剪時可比長短。若腳已剪短，請核對平邊與料件規格，必要時用電表二極體檔確認。<span class="plate-warning"> 教室料件的外徑及封裝待實物確認。</span></p>`;
+        break;
+      case "resistor":
+        figures = [
+          figure("麵包板局部（暫用）", svg("0 0 300 152", "R3 電阻實拍，靠近 D1", photo(18, 264, "295 520 175 90", "R3，靠近 D1")), "裝板後可用鄰近的 D1 辨認 R3。"),
+          figure("四色環放大示意", svg("0 0 324 152", "三支軸向電阻，第三環分別是紅、橙與黃，末環皆是金色", `
+            <defs><linearGradient id="resistorCoat" x2="0" y2="1"><stop stop-color="#f2e1bd"/><stop offset=".52" stop-color="#d9bd88"/><stop offset="1" stop-color="#b58e55"/></linearGradient></defs>
+            ${resistorBody(9, "#a92932", "1 kΩ")}
+            ${resistorBody(58, "#c46122", "10 kΩ")}
+            ${resistorBody(107, "#e0b525", "100 kΩ")}`), "先找間距較大的金環，從另一端開始讀。"),
+          figure("電路符號", svg("0 0 282 152", "矩形電阻符號，R3 為 10 kΩ",
+            `<path d="M37 70H97M185 70H245" stroke="#20313c" stroke-width="3"/>
+             <rect x="97" y="53" width="88" height="34" fill="var(--part-r-soft)" stroke="var(--part-r)" stroke-width="3"/>
+             <text x="141" y="119" text-anchor="middle" font-size="18" font-weight="700" fill="var(--part-r)">R3　10 kΩ</text>`), "符號旁的 R 編號用來查原理圖位置。")
+        ];
+        detail = `<table class="band-table">
+          <caption>四色環怎麼讀</caption>
+          <thead><tr><th scope="col">阻值</th><th scope="col">第 1 環</th><th scope="col">第 2 環</th><th scope="col">第 3 環</th><th scope="col">第 4 環</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">1 kΩ</th><td>棕 1</td><td>黑 0</td><td>紅 ×100</td><td>金 ±5%</td></tr>
+            <tr><th scope="row">10 kΩ</th><td>棕 1</td><td>黑 0</td><td>橙 ×1,000</td><td>金 ±5%</td></tr>
+            <tr><th scope="row">100 kΩ</th><td>棕 1</td><td>黑 0</td><td>黃 ×10,000</td><td>金 ±5%</td></tr>
+          </tbody>
+        </table>`;
+        break;
+      default:
+        figures = [
+          figure("麵包板局部（暫用）", svg("0 0 300 152", "麵包板上的 Q1 與 Q2 電晶體",
+            photo(2, 144, "167 395 155 124", "Q1") + photo(154, 144, "386 670 149 127", "Q2")), "裝板照片可定位外殼。印字與腳序請比對手上的料件。"),
+          figure("TO-92 正面放大示意", svg("0 0 286 152", "UTC 9012 與 9013 TO-92 範例，平面朝前、腳朝下，E、B、C 由左至右", `
+            <defs><linearGradient id="moldedBody" x2="0" y2="1"><stop stop-color="#484f54"/><stop offset="1" stop-color="#22262a"/></linearGradient></defs>
+            ${transistorBody(5, "9012")}${transistorBody(149, "9013")}`), "平面朝向觀看者，三腳朝下。示意印字以型號表示。"),
+          figure("電路符號", svg("0 0 282 152", "PNP 的射極箭頭朝向基極，NPN 的射極箭頭朝外",
+            transistorSymbol(4, "9012 PNP", true) + transistorSymbol(141, "9013 NPN", false)), "箭頭位在 E 腳。PNP 朝內，NPN 朝外。")
+        ];
+        detail = `<p class="plate-detail"><strong>範例腳序</strong> UTC 9012／9013 TO-92 由左至右為 E 射極、B 基極、C 集極。<span class="plate-warning"> 教室實物廠牌及腳序待確認，接線前請比對實際料號。</span></p>`;
+    }
+    return `<div class="plate-figures">${figures.join("")}</div>${detail}`;
+  }
+
+  function renderBreadboardSVG() {
+    const L = state.bbLayer;
+    const showPower = L === "all" || L === "power";
+    const showBjt   = L === "all" || L === "bjt";
+    const showDiode = L === "all" || L === "diode";
+    const showUnit  = L === "all" || L === "unit";
+
+    const oddX = [235, 710, 1198, 1672, 2162];
+    const evenX = [460, 952, 1432, 1916, 2402];
+    const dTop = [[425,512,"D1"],[912,492,"D3"],[1365,496,"D5"],[1848,492,"D7"],[2305,486,"D9"]];
+    const dBot = [[672,732,"D2"],[1128,732,"D4"],[1612,736,"D6"],[2082,718,"D8"]];
+
+    let unitOverlay = "";
+    if (showUnit) {
+      for (let i = 0; i < 5; i++) {
+        const ux = 158 + i * 480;
+        unitOverlay += `
+          <rect x="${ux}" y="182" width="465" height="892" rx="18" fill="#315f51" fill-opacity="0.08" stroke="#315f51" stroke-width="5" stroke-dasharray="16 10"/>
+          <rect x="${ux + 125}" y="582" width="215" height="48" rx="10" fill="#315f51"/>
+          <text x="${ux + 232}" y="614" text-anchor="middle" font-size="25" font-weight="700" fill="#fff">第 ${i+1} 組循環 (Q${i*2+1}+Q${i*2+2})</text>`;
+      }
+    }
+
+    let powerOverlay = "";
+    if (showPower) {
+      powerOverlay = `
+        <rect x="150" y="196" width="2420" height="58" rx="12" fill="var(--rail-power)" fill-opacity="0.16" stroke="var(--rail-power)" stroke-width="5"/>
+        <rect x="165" y="142" width="320" height="46" rx="10" fill="var(--rail-power)"/>
+        <text x="325" y="173" text-anchor="middle" font-size="26" font-weight="700" fill="#fff">+5 V 正電源軌</text>
+
+        <rect x="1295" y="180" width="185" height="90" rx="14" fill="#f5e4c4" fill-opacity="0.25" stroke="#764017" stroke-width="6"/>
+        <rect x="1155" y="138" width="470" height="46" rx="10" fill="#764017"/>
+        <text x="1390" y="169" text-anchor="middle" font-size="25" font-weight="700" fill="#fff">31～34 格 +5 V 跨接線</text>
+
+        <rect x="150" y="1018" width="2420" height="56" rx="12" fill="var(--rail-ground)" fill-opacity="0.16" stroke="var(--rail-ground)" stroke-width="5"/>
+        <rect x="165" y="1078" width="320" height="44" rx="10" fill="var(--rail-ground)"/>
+        <text x="325" y="1108" text-anchor="middle" font-size="25" font-weight="700" fill="#fff">GND 接地軌</text>
+
+        <rect x="1295" y="1002" width="190" height="84" rx="14" fill="#f5e4c4" fill-opacity="0.25" stroke="#764017" stroke-width="6"/>
+        <rect x="1155" y="1078" width="470" height="44" rx="10" fill="#764017"/>
+        <text x="1390" y="1108" text-anchor="middle" font-size="25" font-weight="700" fill="#fff">31～34 格 GND 跨接線</text>`;
+    }
+
+    let bjtOverlay = "";
+    if (showBjt) {
+      oddX.forEach((cx, idx) => {
+        bjtOverlay += `
+          <g>
+            <rect x="${cx - 64}" y="405" width="128" height="92" rx="14" fill="var(--part-pnp)" fill-opacity="0.18" stroke="var(--part-pnp)" stroke-width="5"/>
+            <rect x="${cx - 78}" y="352" width="156" height="46" rx="10" fill="var(--part-pnp)"/>
+            <text x="${cx}" y="383" text-anchor="middle" font-size="24" font-weight="700" fill="#fff">Q${idx*2+1} 9012</text>
+          </g>`;
+      });
+      evenX.forEach((cx, idx) => {
+        bjtOverlay += `
+          <g>
+            <rect x="${cx - 64}" y="668" width="128" height="92" rx="14" fill="var(--part-npn)" fill-opacity="0.18" stroke="var(--part-npn)" stroke-width="5"/>
+            <rect x="${cx - 78}" y="766" width="156" height="46" rx="10" fill="var(--part-npn)"/>
+            <text x="${cx}" y="797" text-anchor="middle" font-size="24" font-weight="700" fill="#fff">Q${idx*2+2} 9013</text>
+          </g>`;
+      });
+    }
+
+    let diodeOverlay = "";
+    if (showDiode) {
+      dTop.forEach(([dx, dy, name]) => {
+        diodeOverlay += `
+          <g>
+            <rect x="${dx - 12}" y="${dy - 28}" width="104" height="52" rx="12" fill="var(--part-d)" fill-opacity="0.18" stroke="var(--part-d)" stroke-width="4.5"/>
+            <rect x="${dx - 18}" y="${dy - 72}" width="128" height="38" rx="8" fill="var(--part-d)"/>
+            <text x="${dx + 46}" y="${dy - 46}" text-anchor="middle" font-size="22" font-weight="700" fill="#fff">${name} 黑環朝右</text>
+          </g>`;
+      });
+      dBot.forEach(([dx, dy, name]) => {
+        diodeOverlay += `
+          <g>
+            <rect x="${dx - 12}" y="${dy - 28}" width="100" height="52" rx="12" fill="var(--part-d)" fill-opacity="0.18" stroke="var(--part-d)" stroke-width="4.5"/>
+            <rect x="${dx - 24}" y="${dy + 30}" width="132" height="38" rx="8" fill="var(--part-d)"/>
+            <text x="${dx + 42}" y="${dy + 56}" text-anchor="middle" font-size="22" font-weight="700" fill="#fff">${name} 黑環朝左</text>
+          </g>`;
+      });
+    }
+
+    return `
+    <svg id="sceneSvg" viewBox="60 130 2620 1005" role="img" aria-label="麵包板原始照片與可切換標註" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+      <image href="菊鍊串接電路.jpg" xlink:href="菊鍊串接電路.jpg" x="0" y="0" width="3264" height="1766"/>
+      ${unitOverlay}
+      ${powerOverlay}
+      ${bjtOverlay}
+      ${diodeOverlay}
+    </svg>`;
+  }
+
+  function renderCleanBreadboardSVG() {
+    const isOrig = state.bbContrast === "orig";
+    const imgHref = isOrig ? "菊鍊串接電路.jpg" : "菊鍊串接電路_高對比.jpg";
+    const cssFilter = state.bbContrast === "ultra" ? "filter:contrast(1.18) saturate(1.22) brightness(0.97);" : "";
+
+    if (isOrig) {
+      let vb = "0 0 3264 1766";
+      if (state.bbSlice === "left") vb = "52 128 1420 990";
+      else if (state.bbSlice === "right") vb = "1272 128 1420 990";
+      return `
+      <svg id="sceneSvg" preserveAspectRatio="xMidYMid meet" viewBox="${vb}" role="img" aria-label="原始麵包板照片" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+        <image href="${imgHref}" xlink:href="${imgHref}" x="0" y="0" width="3264" height="1766"/>
+      </svg>`;
+    }
+
+    let vb = "0 0 2640 990";
+    if (state.bbSlice === "left") vb = "0 0 1420 990";
+    else if (state.bbSlice === "right") vb = "1220 0 1420 990";
+    return `
+    <svg id="sceneSvg" viewBox="${vb}" role="img" aria-label="高對比麵包板照片" style="${cssFilter}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+      <image href="${imgHref}" xlink:href="${imgHref}" x="0" y="0" width="2640" height="990"/>
+    </svg>`;
+  }
+
+  function stageX(k) { return 135 + (k - 1) * 195; }
+
+  function visibleCircuitStages(viewMode) {
+    if (viewMode === "stage1") return [1, 1];
+    if (viewMode === "stage1_2") return [1, 2];
+    if (viewMode === "stage2_3") return [2, 3];
+    if (state.focusStage) return [Math.max(1, state.focusStage - 1), Math.min(10, state.focusStage + 1)];
+    if (state.cameraSlice === "left") return [1, 5];
+    if (state.cameraSlice === "right") return [6, 10];
+    return [1, 10];
+  }
+
+  function renderCircuitSVG(viewMode, sim) {
+    const yTop = 58, yBot = 528, yOdd = 211, yEven = 352;
+    const [first, last] = visibleCircuitStages(viewMode);
+    const full = viewMode.startsWith("full");
+    const viewLeft = first === 1 ? 10 : stageX(first) - 124;
+    const viewRight = stageX(last) + 136;
+    const vb = `${viewLeft} 18 ${viewRight - viewLeft} 551`;
+    const railLabelX = Math.max(45, viewLeft + 15);
+    const paths = [];
+    let body = "";
+
+    const partAttrs = (action, label, active) => !action ? "" :
+      `class="clickable-part" data-action="${action}" role="button" tabindex="0" aria-label="${label}" aria-pressed="${Boolean(active)}"`;
+
+    const rV = (x, y, name, val, fault, action, alignLeft) => {
+      const stroke = fault ? "var(--danger)" : "var(--part-r)";
+      const fill = fault ? "#fff1ec" : "var(--part-r-soft)";
+      const tx = alignLeft ? x - 17 : x + 17;
+      const anchor = alignLeft ? "end" : "start";
+      return `
+      <g ${partAttrs(action, name + " " + val + "，切換斷路", fault)}>
+        <rect class="part-outline" x="${x - 10}" y="${y - 22}" width="20" height="44" rx="2" fill="${fill}" stroke="${stroke}" stroke-width="2.3"/>
+        <text x="${tx}" y="${y - 3}" text-anchor="${anchor}" font-size="16" font-weight="700" fill="${stroke}">${name}</text>
+        <text x="${tx}" y="${y + 16}" text-anchor="${anchor}" font-size="14" fill="${fault ? '#9b2c30' : '#4f5d68'}">${val}</text>
+        ${fault ? `<text x="${x}" y="${y + 6}" text-anchor="middle" font-size="17" font-weight="700" fill="#9b2c30">×</text>` : ""}
+      </g>`;
+    };
+
+    const rH = (x, y, name, val) => `
+      <g>
+        <rect x="${x - 24}" y="${y - 9}" width="48" height="18" rx="2" fill="var(--part-r-soft)" stroke="var(--part-r)" stroke-width="2.3"/>
+        <text x="${x}" y="${y - 15}" text-anchor="middle" font-size="14" font-weight="700" fill="var(--part-r)">${name} ${val}</text>
+      </g>`;
+
+    const drawDiode = (cx, cy, name, pointRight, reversed, k) => {
+      const dir = reversed ? !pointRight : pointRight;
+      const stroke = reversed ? "var(--danger)" : "var(--part-d)";
+      const poly = dir
+        ? `${cx - 14},${cy - 13} ${cx - 14},${cy + 13} ${cx + 12},${cy}`
+        : `${cx + 14},${cy - 13} ${cx + 14},${cy + 13} ${cx - 12},${cy}`;
+      const barX = dir ? cx + 13 : cx - 13;
+      const hint = reversed ? "插反" : (dir ? "K 在右" : "K 在左");
+      return `
+      <g ${partAttrs("d:" + k, name + "，切換二極體插反", reversed)}>
+        <rect class="part-outline" x="${cx - 22}" y="${cy - 17}" width="44" height="34" rx="3" fill="${reversed ? '#fff1ec' : 'transparent'}" stroke="${reversed ? stroke : 'transparent'}" stroke-width="2"/>
+        <line x1="${cx - 23}" y1="${cy}" x2="${cx + 23}" y2="${cy}" stroke="${stroke}" stroke-width="2.6"/>
+        <polygon points="${poly}" fill="${stroke}"/>
+        <line x1="${barX}" y1="${cy - 14}" x2="${barX}" y2="${cy + 14}" stroke="${stroke}" stroke-width="4"/>
+        <text x="${cx}" y="${cy - 20}" text-anchor="middle" font-size="16" font-weight="700" fill="${stroke}">${name}</text>
+        <text x="${cx}" y="${cy + 33}" text-anchor="middle" font-size="14" font-weight="700" fill="${stroke}">${hint}</text>
+      </g>`;
+    };
+
+    const drawLED = (cx, cy, name, lamp, isOn, ledMode, k) => {
+      const isRev = ledMode === "rev";
+      const isSwap = ledMode === "swap";
+      const color = `var(--led-${lamp})`;
+      const stroke = isRev ? "var(--danger)" : color;
+      const poly = isRev
+        ? `${cx - 13},${cy + 11} ${cx + 13},${cy + 11} ${cx},${cy - 13}`
+        : `${cx - 13},${cy - 11} ${cx + 13},${cy - 11} ${cx},${cy + 13}`;
+      const barY = isRev ? cy - 14 : cy + 14;
+      const colorName = lamp === "green" ? "綠" : "紅";
+      const status = isRev ? "極性反接" : (isOn ? colorName + "燈亮" : colorName + "燈滅");
+      return `
+      <g ${partAttrs("led:" + k, name + "，" + status + "，切換 LED 故障", ledMode)}>
+        <rect class="part-outline" x="${cx - 43}" y="${cy - 23}" width="62" height="46" rx="3" fill="${isSwap ? '#edf3f7' : 'transparent'}" stroke="transparent"/>
+        <line x1="${cx}" y1="${cy - 23}" x2="${cx}" y2="${cy + 23}" stroke="${stroke}" stroke-width="2.7"/>
+        <polygon points="${poly}" fill="${isOn ? color : `var(--led-${lamp}-soft)`}" stroke="${stroke}" stroke-width="2"/>
+        <line x1="${cx - 14}" y1="${barY}" x2="${cx + 14}" y2="${barY}" stroke="${stroke}" stroke-width="3"/>
+        <path d="M${cx-17} ${cy-7}l-13 -9m2 7l-2 -7 7 0M${cx-21} ${cy+3}l-14 -8m2 6l-2 -6 7 0"
+          fill="none" stroke="${stroke}" ${isOn ? "" : 'stroke-dasharray="2 2"'} stroke-width="2" stroke-linejoin="round"/>
+        <text x="${cx + 23}" y="${cy + 1}" font-size="16" font-weight="700" fill="${color}">${name}</text>
+        <text x="${cx + 23}" y="${cy + 19}" font-size="14" font-weight="700" fill="${isOn ? color : (isRev ? stroke : '#4f5d68')}">${status}</text>
+      </g>`;
+    };
+
+    // Keep rail labels visible when the viewport shows only a few stages.
+    const railRight = stageX(last) + 130;
+    body += `
+      <line x1="45" y1="${yTop}" x2="${railRight}" y2="${yTop}" class="wire-hot"/>
+      <text x="${railLabelX}" y="${yTop - 10}" font-size="17" font-weight="700" fill="var(--rail-power)">+5 V 電源</text>
+      <line x1="45" y1="${yBot}" x2="${railRight}" y2="${yBot}" class="wire-gnd"/>
+      <text x="${railLabelX}" y="${yBot + 25}" font-size="17" font-weight="700" fill="var(--rail-ground)">GND 0 V</text>
+    `;
+    if (first > 1) {
+      const baseX = stageX(first) - 52;
+      const incomingY = first % 2 ? yOdd : yEven;
+      const incomingX = viewLeft + 12;
+      body += `
+        <line x1="${incomingX}" y1="${incomingY}" x2="${baseX}" y2="${incomingY}" class="${sim.qOn[first] ? (first % 2 ? 'wire-pull' : 'wire-push') : 'wire-off'}"/>
+        <text x="${incomingX}" y="${incomingY - 13}" font-size="14" font-weight="700" fill="#263f52">接 Q${first - 1}</text>
+      `;
+    }
+    if (full && last < 10) {
+      const outgoingX = stageX(last);
+      const outgoingY = last % 2 ? yEven : yOdd;
+      body += `
+        <line x1="${outgoingX}" y1="${outgoingY}" x2="${viewRight - 17}" y2="${outgoingY}" class="${sim.qOn[last + 1] ? (last % 2 ? 'wire-push' : 'wire-pull') : 'wire-off'}"/>
+        <text x="${outgoingX + 19}" y="${outgoingY - 13}" font-size="14" font-weight="700" fill="#263f52">接 Q${last + 1}</text>
+      `;
+    }
+
+    for (let k = first; k <= last; k++) {
+      const st = STAGES[k - 1];
+      const x = stageX(k);
+      const xB = x - 52;
+      const qOn = sim.qOn[k];
+      const ledOn = sim.ledOn[k];
+      const qFault = !!state.faults.q[k];
+      const isGreen = state.faults.led[k] === "swap" ? !st.pnp : st.pnp;
+      const lamp = isGreen ? "green" : "red";
+      const branchColor = `var(--led-${lamp})`;
+      const transistorColor = st.pnp ? "var(--part-pnp)" : "var(--part-npn)";
+      const transistorTint = st.pnp ? "var(--part-pnp-soft)" : "var(--part-npn-soft)";
+
+      body += `<g style="--branch-color:${branchColor}">`;
+
+      if (st.pnp) {
+        // Odd Stage: 9012 PNP at (x, yOdd)
+        const cWire = qOn ? "wire-on" : "wire-off";
+        body += `
+          <line x1="${x}" y1="${yTop}" x2="${x}" y2="${yOdd - 28}" class="wire-hot"/>
+          <circle cx="${x}" cy="${yTop}" r="4.5" fill="var(--rail-power)"/>
+          <line x1="${x}" y1="${yOdd + 28}" x2="${x}" y2="${yEven}" class="${cWire}"/>
+          <line x1="${x}" y1="${yEven}" x2="${x}" y2="${yBot}" class="${ledOn ? 'wire-led' : 'wire-off'}"/>
+          <circle cx="${x}" cy="${yBot}" r="4.5" fill="var(--rail-ground)"/>
+          <circle cx="${x}" cy="${yEven}" r="4.5" fill="${qOn ? '#23473c' : '#9aa8a0'}"/>
+          <line x1="${xB}" y1="${yOdd}" x2="${x - 28}" y2="${yOdd}" class="${qOn ? 'wire-on' : 'wire-off'}"/>
+        `;
+
+        if (k === 1) {
+          body += `
+            <line x1="${xB}" y1="${yOdd}" x2="${xB}" y2="${yBot}" class="${qOn ? 'wire-ib' : 'wire-off'}"/>
+            <circle cx="${xB}" cy="${yBot}" r="4.5" fill="var(--rail-ground)"/>
+            ${rV(xB, yEven + 29, "R1", "10kΩ", state.faults.r1, "r1", true)}
+          `;
+          if (qOn) {
+            paths.push({ pts: [[x, yTop], [x, yOdd], [xB, yOdd], [xB, yBot]], color: "var(--flow-ib)", r: 5, n: 3 });
+          }
+        } else {
+          body += `
+            <line x1="${xB}" y1="${yTop}" x2="${xB}" y2="${yOdd}" stroke="${state.faults.rbe[k] ? '#d97706' : '#8da096'}" stroke-width="2" ${state.faults.rbe[k] ? 'stroke-dasharray="5 4"' : ''}/>
+            <circle cx="${xB}" cy="${yTop}" r="4" fill="var(--rail-power)"/>
+            <circle cx="${xB}" cy="${yOdd}" r="4" fill="#253c3c"/>
+            ${rV(xB, 133, st.rBe, st.rBeVal, !!state.faults.rbe[k], "rbe:" + k, true)}
+          `;
+        }
+
+        // PNP Transistor Symbol
+        body += `
+          <g ${partAttrs('q:' + k, st.q + '，切換電晶體空焊', qFault)}>
+            <circle class="part-outline" cx="${x}" cy="${yOdd}" r="28" fill="${qFault ? '#fff1ec' : transistorTint}" stroke="${qFault ? 'var(--danger)' : transistorColor}" stroke-width="2.8"/>
+            <line x1="${x - 11}" y1="${yOdd - 15}" x2="${x - 11}" y2="${yOdd + 15}" stroke="#253c3c" stroke-width="3.2"/>
+            <line x1="${x - 28}" y1="${yOdd}" x2="${x - 11}" y2="${yOdd}" stroke="#253c3c" stroke-width="2.5"/>
+            <line x1="${x}" y1="${yOdd - 26}" x2="${x - 11}" y2="${yOdd - 7}" stroke="#253c3c" stroke-width="2.5"/>
+            <polygon points="${x - 10},${yOdd - 7} ${x - 1},${yOdd - 11} ${x - 6},${yOdd - 19}" fill="${transistorColor}"/>
+            <line x1="${x - 11}" y1="${yOdd + 7}" x2="${x}" y2="${yOdd + 26}" stroke="#253c3c" stroke-width="2.5"/>
+            <text x="${x + 7}" y="${yOdd - 31}" font-size="14" font-weight="700" fill="#263f52">E</text>
+            <text x="${x - 38}" y="${yOdd - 6}" font-size="14" font-weight="700" fill="#263f52">B</text>
+            <text x="${x + 7}" y="${yOdd + 41}" font-size="14" font-weight="700" fill="#263f52">C</text>
+            <text x="${x + 35}" y="${yOdd - 5}" font-size="17" font-weight="700" fill="${transistorColor}">${st.q}</text>
+            <text x="${x + 35}" y="${yOdd + 13}" font-size="14" font-weight="600" fill="${transistorColor}">${st.model} PNP</text>
+            ${qFault ? `<text x="${x}" y="${yOdd + 6}" text-anchor="middle" font-size="22" font-weight="900" fill="#b91c1c">✕</text>` : ""}
+          </g>
+          ${rV(x, 409, st.rLed, "1kΩ", false, "", true)}
+          ${drawLED(x, 474, st.led, lamp, ledOn, state.faults.led[k], k)}
+        `;
+
+        if (ledOn) {
+          paths.push({ pts: [[x, yTop], [x, yOdd], [x, yEven], [x, yBot]], color: branchColor, r: 6, n: 4 });
+        }
+
+        // Odd -> Even Coupling (Push Right at yEven)
+        if (k < last) {
+          const xNext = stageX(k + 1);
+          const xNextB = xNext - 52;
+          const cActive = qOn && !state.faults.d[k] && !state.faults.q[k + 1] && state.dominoStep >= k + 1;
+          body += `
+            <line x1="${x}" y1="${yEven}" x2="${xNextB}" y2="${yEven}" class="${cActive ? 'wire-push' : 'wire-off'}"/>
+            ${rH(x + 44, yEven, st.rCouple, "10kΩ")}
+            ${drawDiode(x + 106, yEven, st.diode, true, !!state.faults.d[k], k)}
+          `;
+          if (cActive) {
+            paths.push({ pts: [[x, yEven], [xNextB, yEven], [xNext, yEven], [xNext, yBot]], color: "var(--flow-push)", r: 5.2, n: 3 });
+          }
+        }
+      } else {
+        // Even Stage: 9013 NPN at (x, yEven)
+        body += `
+          <line x1="${x}" y1="${yTop}" x2="${x}" y2="${yOdd}" class="${ledOn ? 'wire-led' : 'wire-off'}"/>
+          <circle cx="${x}" cy="${yTop}" r="4.5" fill="var(--rail-power)"/>
+          <line x1="${x}" y1="${yOdd}" x2="${x}" y2="${yEven - 28}" class="${qOn ? 'wire-on' : 'wire-off'}"/>
+          <circle cx="${x}" cy="${yOdd}" r="4.5" fill="${qOn ? '#23473c' : '#9aa8a0'}"/>
+          <line x1="${x}" y1="${yEven + 28}" x2="${x}" y2="${yBot}" class="${qOn ? 'wire-gnd' : 'wire-off'}"/>
+          <circle cx="${x}" cy="${yBot}" r="4.5" fill="var(--rail-ground)"/>
+
+          <line x1="${xB}" y1="${yEven}" x2="${x - 28}" y2="${yEven}" class="${qOn ? 'wire-on' : 'wire-off'}"/>
+          <line x1="${xB}" y1="${yEven}" x2="${xB}" y2="${yBot}" stroke="${state.faults.rbe[k] ? '#d97706' : '#8da096'}" stroke-width="2" ${state.faults.rbe[k] ? 'stroke-dasharray="5 4"' : ''}/>
+          <circle cx="${xB}" cy="${yEven}" r="4" fill="#253c3c"/>
+          <circle cx="${xB}" cy="${yBot}" r="4" fill="var(--rail-ground)"/>
+          ${rV(xB, 451, st.rBe, st.rBeVal, !!state.faults.rbe[k], "rbe:" + k, true)}
+
+          ${drawLED(x, 103, st.led, lamp, ledOn, state.faults.led[k], k)}
+          ${rV(x, 156, st.rLed, "1kΩ", false, "", false)}
+
+          <g ${partAttrs('q:' + k, st.q + '，切換電晶體空焊', qFault)}>
+            <circle class="part-outline" cx="${x}" cy="${yEven}" r="28" fill="${qFault ? '#fff1ec' : transistorTint}" stroke="${qFault ? 'var(--danger)' : transistorColor}" stroke-width="2.8"/>
+            <line x1="${x - 11}" y1="${yEven - 15}" x2="${x - 11}" y2="${yEven + 15}" stroke="#253c3c" stroke-width="3.2"/>
+            <line x1="${x - 28}" y1="${yEven}" x2="${x - 11}" y2="${yEven}" stroke="#253c3c" stroke-width="2.5"/>
+            <line x1="${x - 11}" y1="${yEven - 7}" x2="${x}" y2="${yEven - 26}" stroke="#253c3c" stroke-width="2.5"/>
+            <line x1="${x - 11}" y1="${yEven + 7}" x2="${x}" y2="${yEven + 26}" stroke="#253c3c" stroke-width="2.5"/>
+            <polygon points="${x},${yEven + 25} ${x - 9},${yEven + 20} ${x - 3},${yEven + 13}" fill="${transistorColor}"/>
+            <text x="${x + 7}" y="${yEven - 31}" font-size="14" font-weight="700" fill="#263f52">C</text>
+            <text x="${x - 38}" y="${yEven - 6}" font-size="14" font-weight="700" fill="#263f52">B</text>
+            <text x="${x + 7}" y="${yEven + 41}" font-size="14" font-weight="700" fill="#263f52">E</text>
+            <text x="${x + 35}" y="${yEven - 5}" font-size="17" font-weight="700" fill="${transistorColor}">${st.q}</text>
+            <text x="${x + 35}" y="${yEven + 13}" font-size="14" font-weight="600" fill="${transistorColor}">${st.model} NPN</text>
+            ${qFault ? `<text x="${x}" y="${yEven + 6}" text-anchor="middle" font-size="22" font-weight="900" fill="#b91c1c">✕</text>` : ""}
+          </g>
+        `;
+
+        if (ledOn) {
+          paths.push({ pts: [[x, yTop], [x, yOdd], [x, yEven], [x, yBot]], color: branchColor, r: 6, n: 4 });
+        }
+
+        // Even -> Odd Coupling (Pull Left at yOdd!)
+        if (k < last && st.diode) {
+          const xNext = stageX(k + 1);
+          const xNextB = xNext - 52;
+          const cActive = qOn && !state.faults.d[k] && !state.faults.q[k + 1] && state.dominoStep >= k + 1;
+          body += `
+            <line x1="${x}" y1="${yOdd}" x2="${xNextB}" y2="${yOdd}" class="${cActive ? 'wire-pull' : 'wire-off'}"/>
+            ${rH(x + 44, yOdd, st.rCouple, "10kΩ")}
+            ${drawDiode(x + 106, yOdd, st.diode, false, !!state.faults.d[k], k)}
+          `;
+          if (cActive) {
+            paths.push({ pts: [[xNext, yTop], [xNext, yOdd], [xNextB, yOdd], [x, yOdd], [x, yEven], [x, yBot]], color: "var(--flow-pull)", r: 5.2, n: 4 });
+          }
+        }
+      }
+
+      if (sim.floatingBase[k]) {
+        const fy = st.pnp ? yOdd - 36 : yEven + 42;
+        body += `
+          <rect x="${xB - 48}" y="${fy - 14}" width="96" height="22" rx="5" fill="#fef3c7" stroke="#d97706"/>
+          <text x="${xB}" y="${fy + 1}" text-anchor="middle" font-size="11" font-weight="700" fill="#92400e">基極浮接</text>`;
+      }
+
+      body += `</g>`;
+    }
+
+    if (viewMode === "stage1") {
+      body += `
+        <text x="39" y="322" font-size="19" font-weight="700" fill="var(--flow-ib)">Ib ↓</text>
+        <text x="153" y="326" font-size="19" font-weight="700" fill="var(--led-green)">Ic ↓</text>`;
+    } else if (viewMode === "stage1_2") {
+      body += `<text x="160" y="305" font-size="18" font-weight="700" fill="var(--flow-push)">推 →</text>`;
+    } else if (viewMode === "stage2_3") {
+      body += `<text x="386" y="272" font-size="18" font-weight="700" fill="var(--flow-pull)">← 拉</text>`;
+    }
+
+    state.particles = paths;
+    return `
+      <svg id="sceneSvg" class="schematic" preserveAspectRatio="xMidYMid meet" viewBox="${vb}" xmlns="http://www.w3.org/2000/svg" aria-label="Q${first} 到 Q${last} 的電路圖">
+        ${body}
+        <g id="particleLayer"></g>
+      </svg>`;
+  }
+
+  // Follow each current path and orient its arrow to the active segment.
+  function pointOnPolyline(pts, t) {
+    let total = 0;
+    const segs = [];
+    for (let i = 0; i < pts.length - 1; i++) {
+      const dx = pts[i + 1][0] - pts[i][0], dy = pts[i + 1][1] - pts[i][1];
+      const len = Math.hypot(dx, dy);
+      segs.push({ x1: pts[i][0], y1: pts[i][1], dx, dy, len });
+      total += len;
+    }
+    let target = (t % 1) * total;
+    for (const s of segs) {
+      if (target <= s.len || s.len === 0) {
+        const r = s.len ? target / s.len : 0;
+        return [s.x1 + s.dx * r, s.y1 + s.dy * r, Math.atan2(s.dy, s.dx) * 180 / Math.PI];
+      }
+      target -= s.len;
+    }
+    const last = pts[pts.length - 1];
+    return [last[0], last[1], 0];
+  }
+
+  let animPhase = 0;
+  let lastTs = performance.now();
+  function tick(now) {
+    const dt = Math.max(0, Math.min(0.05, (now - lastTs) / 1000));
+    lastTs = now;
+    if (state.playing) {
+      animPhase = (animPhase + dt * 0.42 * state.speed) % 1000;
+    }
+
+    const pLayer = document.getElementById("particleLayer");
+    if (pLayer && state.particles.length) {
+      let arrows = "";
+      for (const path of state.particles) {
+        for (let i = 0; i < path.n; i++) {
+          const t = (animPhase + (i + .5) / path.n) % 1;
+          const [px, py, angle] = pointOnPolyline(path.pts, t);
+          arrows += `<g transform="translate(${px.toFixed(1)} ${py.toFixed(1)})">
+            <circle r="${path.r * 2.15}" fill="${path.color}" opacity=".16"/>
+            <circle r="${path.r * 1.55}" fill="${path.color}" opacity=".32"/>
+            <path d="M-7 -2H-1V-5L7 0-1 5V2H-7Z" transform="rotate(${angle.toFixed(1)}) scale(${path.r / 5})" fill="${path.color}" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/>
+            <circle cx="-1" r="1.65" fill="#fff" opacity=".95"/>
+          </g>`;
+        }
+      }
+      pLayer.innerHTML = arrows;
+    }
+
+    const current = Math.floor(animPhase * 6) % 10 + 1;
+    for (const cell of chainStrip.querySelectorAll(".domino-cell")) {
+      const step = Number(cell.dataset.step);
+      cell.classList.toggle("lit", step <= current);
+    }
+
+    requestAnimationFrame(tick);
+  }
+
+  // Lesson navigation, diagram tools, and standalone export
+  const lesson = document.getElementById("lesson");
+  const canvasStage = document.getElementById("canvasStage");
+  const diagBanner = document.getElementById("diagBanner");
+  const presetBar = document.getElementById("presetBar");
+  const cameraControls = document.getElementById("cameraControls");
+  const statusPill = document.getElementById("statusPill");
+  const noteEditor = document.getElementById("noteEditor");
+  const editHint = document.getElementById("editHint");
+  const editModeBtn = document.getElementById("editModeBtn");
+  const saveHtmlBtn = document.getElementById("saveHtmlBtn");
+  const teacherTools = document.getElementById("teacherTools");
+  const resetFaultsBtn = document.getElementById("resetFaultsTopBtn");
+  const playPauseBtn = document.getElementById("playPauseBtn");
+  const replayBtn = document.getElementById("replayDominoBtn");
+  const toggleValuesBtn = document.getElementById("toggleValuesBtn");
+  const chainStrip = document.getElementById("chainStrip");
+  const componentPlate = document.getElementById("componentPlate");
+  const valuesPanel = document.getElementById("valuesPanel");
+  const faultPreset = document.getElementById("faultPreset");
+  const fullBtn = document.getElementById("fullBtn");
+  const exportTemplate = document.documentElement.cloneNode(true);
+
+  function resetZoom() {
+    state.zoom = 1;
+    state.panX = 0;
+    state.panY = 0;
+  }
+
+  function applyZoomTransform() {
+    const svg = document.getElementById("sceneSvg");
+    if (!svg) return;
+    svg.style.transform = `translate(${state.panX}px, ${state.panY}px) scale(${state.zoom})`;
+    svg.style.transformOrigin = "center center";
+    document.getElementById("zoomLabel").textContent = Math.round(state.zoom * 100) + "%";
+    canvasStage.classList.toggle("pannable", state.zoom > 1.02);
+  }
+
+  function stopWave() {
+    clearInterval(state.dominoTimer);
+    state.dominoTimer = null;
+  }
+
+  function startDominoWave() {
+    stopWave();
+    state.dominoStep = 0;
+    renderCurrentCanvas();
+    state.dominoTimer = setInterval(() => {
+      if (!state.playing) return;
+      state.dominoStep++;
+      renderCurrentCanvas();
+      if (state.dominoStep >= 10) stopWave();
+    }, Math.max(180, Math.round(480 / state.speed)));
+  }
+
+  function setPlaying(playing) {
+    state.playing = playing;
+    playPauseBtn.textContent = playing ? "暫停動畫" : "播放動畫";
+  }
+
+  function renderChoices(container, dataName, choices, active, title = "") {
+    const attr = "data-" + dataName;
+    const focused = container.contains(document.activeElement) ? document.activeElement.getAttribute(attr) : null;
+    const label = title ? `<span class="tool-label">${title}</span>` : "";
+    const html = label + choices.map(([id, name]) =>
+      `<button type="button" ${attr}="${id}" aria-pressed="${id === active}">${name}</button>`).join("");
+    if (container.innerHTML !== html) {
+      container.innerHTML = html;
+      if (focused) container.querySelector(`[${attr}="${focused}"]`)?.focus({ preventScroll: true });
+    }
+    container.hidden = false;
+  }
+
+  function renderChain(mode, sim) {
+    const focused = chainStrip.contains(document.activeElement) ? document.activeElement.dataset.focusStage : null;
+    chainStrip.innerHTML = STAGES.map(stage => {
+      const on = mode === "cards" || sim.ledOn[stage.k];
+      const green = state.faults.led[stage.k] === "swap" ? !stage.pnp : stage.pnp;
+      const color = green ? "green" : "red";
+      const label = on ? (green ? "綠亮" : "紅亮") : "熄滅";
+      const content = `<span class="lamp-dot" aria-hidden="true"></span><strong>${stage.q}</strong><span>${mode === "cards" ? (green ? "綠" : "紅") : label}</span>`;
+      if (mode === "full_fault") {
+        return `<li><button type="button" class="chain-cell ${color}${on ? "" : " off"}" data-focus-stage="${stage.k}" aria-pressed="${state.focusStage === stage.k}" aria-label="聚焦 ${stage.q}，${stage.led} ${label}">${content}</button></li>`;
+      }
+      if (mode === "cards") {
+        return `<li><span class="chain-cell ${color} domino-cell lit" data-step="${stage.k}">${content}</span></li>`;
+      }
+      return `<li><span class="chain-cell ${color}${on ? "" : " off"}">${content}</span></li>`;
+    }).join("");
+    if (focused) chainStrip.querySelector(`[data-focus-stage="${focused}"]`)?.focus({ preventScroll: true });
+  }
+
+  function renderValues(view, sim) {
+    const [first, last] = visibleCircuitStages(view);
+    const rows = STAGES.slice(first - 1, last).map(({ k, q }) => `
+      <li><strong>${q}</strong><span>Vc ${sim.vcVal[k]}</span><span>Ib ${sim.ibVal[k]} mA</span><span>Ic ${sim.icVal[k]} mA</span></li>`).join("");
+    valuesPanel.innerHTML = `<h4>模型估算值・全鏈電流約 ${sim.totalCurrent.toFixed(1)} mA</h4><ul class="values-grid">${rows}</ul>`;
+  }
+
+  function renderCurrentCanvas() {
+    const page = pages[state.pageIndex];
+    const isCards = page.mode === "cards";
+    const isCircuit = page.mode === "circuit";
+    const isFull = isCircuit && page.view.startsWith("full");
+    const isFault = page.view === "full_fault";
+    const sim = isCircuit ? solveCircuit() : null;
+    const hasFault = isCircuit && hasAnyFault();
+    const focusedPart = canvasStage.contains(document.activeElement) ? document.activeElement.getAttribute("data-action") : null;
+
+    canvasStage.hidden = isCards;
+    componentPlate.hidden = !isCards;
+    document.getElementById("componentLinks").hidden = !isCards;
+    chainStrip.hidden = !isCards && !isFull;
+    document.getElementById("animControls").hidden = !isCircuit && !isCards;
+    document.getElementById("circuitControls").hidden = !isCircuit;
+    document.getElementById("faultControls").hidden = !isFault;
+    document.getElementById("zoomControls").hidden = isCards;
+    document.getElementById("currentLegend").hidden = !isCircuit;
+    replayBtn.hidden = page.view !== "full_domino";
+    resetFaultsBtn.hidden = !hasFault;
+    cameraControls.hidden = true;
+    presetBar.hidden = true;
+    diagBanner.hidden = !hasFault;
+    valuesPanel.hidden = !isCircuit || !state.showValues;
+    statusPill.hidden = !isCircuit;
+    if (isCircuit) {
+      statusPill.classList.toggle("fault", hasFault);
+      const [first, last] = isFull ? [1, 10] : visibleCircuitStages(page.view);
+      const shownLamps = STAGES.slice(first - 1, last).filter(({ k }) => sim.ledOn[k]).length;
+      const lampStatus = `${isFull ? "" : "本圖 "}${shownLamps} / ${last - first + 1} 顆亮${hasFault ? "・故障模擬" : ""}`;
+      if (statusPill.textContent !== lampStatus) statusPill.textContent = lampStatus;
+      if (hasFault) {
+        diagBanner.className = "diag-banner " + sim.diag.level;
+        diagBanner.innerHTML = sim.diag.text.replace(/^🔍\s*|^故障診斷：/g, "").replace(/！/g, "。");
+      }
+      if (state.showValues) renderValues(page.view, sim);
+    }
+
+    if (isCards || isFull) renderChain(isCards ? "cards" : page.view, sim);
+    if (isCards) {
+      state.particles = [];
+      canvasStage.innerHTML = "";
+      if (!componentPlate.innerHTML) {
+        componentPlate.innerHTML = [
+          ["bjt", "電晶體"],
+          ["diode", "二極體"],
+          ["led", "LED"],
+          ["resistor", "電阻"]
+        ].map(([key, name]) => `<section class="component-section" id="part-${key}">
+          <h4>${name}</h4>${renderComponentPlate(key)}</section>`).join("");
+      }
+      return;
+    }
+    if (page.mode === "breadboard") {
+      state.particles = [];
+      renderChoices(presetBar, "bblayer", [["power", "電源軌"], ["bjt", "電晶體"], ["diode", "二極體"], ["unit", "重複配置"], ["all", "全部"]], state.bbLayer, "照片圖層");
+      canvasStage.innerHTML = renderBreadboardSVG();
+    } else if (page.mode === "breadboard_clean") {
+      state.particles = [];
+      renderChoices(cameraControls, "bbslice", [["all", "全板"], ["left", "左半"], ["right", "右半"]], state.bbSlice);
+      renderChoices(presetBar, "bbcontrast", [["orig", "原始照片"], ["high", "高對比"], ["ultra", "加強對比"]], state.bbContrast, "照片對比");
+      canvasStage.innerHTML = renderCleanBreadboardSVG();
+    } else {
+      if (isFull) {
+        renderChoices(cameraControls, "cam", [["all", "全覽"], ["left", "Q1～Q5"], ["right", "Q6～Q10"]], state.focusStage ? "" : state.cameraSlice);
+      }
+      canvasStage.innerHTML = renderCircuitSVG(page.view, sim);
+    }
+    if (focusedPart) {
+      const part = canvasStage.querySelector(`[data-action="${focusedPart}"][tabindex="0"]`);
+      (part || canvasStage).focus({ preventScroll: true });
+    }
+    applyZoomTransform();
+  }
+
+  function renderContents() {
+    document.getElementById("pageList").innerHTML = pages.map((page, index) => `
+      <button type="button" class="page-item" data-page="${index}"${index === state.pageIndex ? ' aria-current="step"' : ""}>
+        <span class="number">${String(index + 1).padStart(2, "0")}</span>
+        <span>${page.chapter}</span>
+      </button>`).join("");
+  }
+
+  function setContents(open) {
+    document.getElementById("sidebar").hidden = !open;
+    document.getElementById("toggleMenuBtn").setAttribute("aria-expanded", String(open));
+  }
+
+  function commitCurrentNote() {
+    if (!state.editing) return;
+    pages[state.pageIndex].notesHtml = noteEditor.innerHTML;
+    try {
+      const map = Object.fromEntries(pages.map(page => [page.id, page.notesHtml]));
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(map));
+      editHint.textContent = "草稿已暫存於此瀏覽器。匯出後，請把新版 HTML 和教材圖片放在同一層。";
+    } catch (_) {
+      editHint.textContent = "此瀏覽器無法暫存草稿。請匯出新版 HTML，以保留編輯內容。";
+    }
+  }
+
+  function goToPage(index, focusTitle = true) {
+    const next = Math.max(0, Math.min(pages.length - 1, index));
+    setContents(false);
+    const title = document.getElementById("lessonTitle");
+    if (state.pageIndex !== next || !lesson.dataset.mode) {
+      commitCurrentNote();
+      stopWave();
+      state.pageIndex = next;
+      state.dominoStep = 10;
+      state.cameraSlice = "all";
+      state.focusStage = 0;
+      faultPreset.value = "";
+      clearAllFaults();
+      resetZoom();
+
+      const page = pages[next];
+      lesson.dataset.mode = page.mode;
+      lesson.dataset.view = page.view || "";
+      document.getElementById("chapterLabel").textContent = page.chapter;
+      document.getElementById("pageNumber").textContent = `${String(next + 1).padStart(2, "0")} / ${String(pages.length).padStart(2, "0")}`;
+      document.getElementById("navCount").textContent = `${next + 1} / ${pages.length}`;
+      title.textContent = page.title;
+      document.getElementById("lessonObjective").textContent = page.objective;
+      document.getElementById("mediaType").textContent = page.mediaLabel;
+      document.getElementById("diagramCaption").textContent = page.caption;
+      canvasStage.setAttribute("aria-label", page.mediaLabel + "，可縮放");
+      noteEditor.innerHTML = page.notesHtml;
+      document.getElementById("notes").scrollTop = 0;
+      componentPlate.scrollTop = 0;
+      document.getElementById("prevBtn").disabled = next === 0;
+      document.getElementById("nextBtn").disabled = next === pages.length - 1;
+      renderContents();
+      if (page.view === "full_domino" && state.playing) startDominoWave();
+      else renderCurrentCanvas();
+    }
+    if (focusTitle) {
+      title.focus({ preventScroll: true });
+      window.scrollTo(0, 0);
+    }
+  }
+
+  function togglePart(part) {
+    stopWave();
+    state.dominoStep = 10;
+    const [kind, numStr] = part.dataset.action.split(":");
+    const k = Number(numStr);
+    const inFaultLab = pages[state.pageIndex].view === "full_fault";
+    if (kind === "r1") state.faults.r1 = !state.faults.r1;
+    else if (kind === "q" || kind === "d" || kind === "rbe") state.faults[kind][k] = !state.faults[kind][k];
+    else if (kind === "led") {
+      const previous = state.faults.led[k];
+      state.faults.led[k] = !previous ? "rev" : (inFaultLab && previous === "rev" ? "swap" : "");
+    }
+    if (inFaultLab) {
+      faultPreset.value = "";
+      state.focusStage = k || 1;
+      resetZoom();
+    }
+    renderCurrentCanvas();
+  }
+
+  canvasStage.addEventListener("click", event => {
+    const part = event.target.closest("[data-action]");
+    if (part) togglePart(part);
+  });
+
+  canvasStage.addEventListener("keydown", event => {
+    const part = event.target.closest("[data-action]");
+    if (part && (event.key === "Enter" || event.key === " ")) {
+      event.preventDefault();
+      if (!event.repeat) togglePart(part);
+    }
+  });
+
+  faultPreset.addEventListener("change", () => {
+    stopWave();
+    state.dominoStep = 10;
+    clearAllFaults();
+    state.cameraSlice = "all";
+    state.focusStage = 0;
+    resetZoom();
+    switch (faultPreset.value) {
+      case "q4":
+        state.faults.q[4] = true;
+        state.focusStage = 4;
+        break;
+      case "d5":
+        state.faults.d[5] = true;
+        state.focusStage = 5;
+        break;
+      case "led_rev":
+        state.faults.led[3] = state.faults.led[6] = "rev";
+        state.focusStage = 3;
+        break;
+      case "rg_swap":
+        state.faults.led[3] = state.faults.led[4] = "swap";
+        state.focusStage = 3;
+        break;
+      case "r10":
+        state.faults.rbe[4] = true;
+        state.focusStage = 4;
+        break;
+    }
+    renderCurrentCanvas();
+  });
+
+  resetFaultsBtn.addEventListener("click", () => {
+    clearAllFaults();
+    faultPreset.value = "";
+    state.focusStage = 0;
+    state.cameraSlice = "all";
+    resetZoom();
+    renderCurrentCanvas();
+    (faultPreset.closest("[hidden]") ? canvasStage : faultPreset).focus({ preventScroll: true });
+  });
+
+  chainStrip.addEventListener("click", event => {
+    const button = event.target.closest("[data-focus-stage]");
+    if (!button) return;
+    state.focusStage = Number(button.dataset.focusStage);
+    resetZoom();
+    renderCurrentCanvas();
+  });
+
+  presetBar.addEventListener("click", event => {
+    const button = event.target.closest("button");
+    if (!button) return;
+    const { bblayer, bbcontrast } = button.dataset;
+    if (bblayer) state.bbLayer = bblayer;
+    if (bbcontrast) state.bbContrast = bbcontrast;
+    renderCurrentCanvas();
+  });
+
+  cameraControls.addEventListener("click", event => {
+    const button = event.target.closest("button");
+    if (!button) return;
+    if (button.dataset.cam) {
+      state.cameraSlice = button.dataset.cam;
+      state.focusStage = 0;
+    } else {
+      state.bbSlice = button.dataset.bbslice;
+    }
+    resetZoom();
+    renderCurrentCanvas();
+  });
+
+  document.getElementById("pageList").addEventListener("click", event => {
+    const item = event.target.closest("[data-page]");
+    if (item) goToPage(Number(item.dataset.page));
+  });
+  document.getElementById("prevBtn").addEventListener("click", () => goToPage(state.pageIndex - 1));
+  document.getElementById("nextBtn").addEventListener("click", () => goToPage(state.pageIndex + 1));
+  document.getElementById("toggleMenuBtn").addEventListener("click", () => setContents(document.getElementById("sidebar").hidden));
+
+  playPauseBtn.addEventListener("click", () => setPlaying(!state.playing));
+  replayBtn.addEventListener("click", () => {
+    setPlaying(true);
+    startDominoWave();
+  });
+  document.getElementById("speedSelect").addEventListener("change", event => {
+    state.speed = Number(event.target.value);
+  });
+
+  toggleValuesBtn.addEventListener("click", () => {
+    state.showValues = !state.showValues;
+    toggleValuesBtn.setAttribute("aria-pressed", String(state.showValues));
+    toggleValuesBtn.textContent = state.showValues ? "隱藏估算值" : "顯示估算值";
+    renderCurrentCanvas();
+  });
+
+  function setZoom(zoom) {
+    state.zoom = Math.max(.75, Math.min(3.2, zoom));
+    if (state.zoom <= 1.01) {
+      state.panX = 0;
+      state.panY = 0;
+    }
+    applyZoomTransform();
+  }
+
+  document.getElementById("zoomInBtn").addEventListener("click", () => setZoom(state.zoom + .25));
+  document.getElementById("zoomOutBtn").addEventListener("click", () => setZoom(state.zoom - .25));
+  document.getElementById("zoomResetBtn").addEventListener("click", () => {
+    resetZoom();
+    applyZoomTransform();
+  });
+
+  canvasStage.addEventListener("wheel", event => {
+    if (!event.ctrlKey) return;
+    event.preventDefault();
+    setZoom(state.zoom + (event.deltaY < 0 ? .18 : -.18));
+  }, { passive: false });
+
+  let dragStart = null;
+  canvasStage.addEventListener("pointerdown", event => {
+    if (event.button !== 0 || state.zoom <= 1.02 || event.target.closest("[data-action]")) return;
+    dragStart = { id: event.pointerId, x: event.clientX - state.panX, y: event.clientY - state.panY };
+    canvasStage.classList.add("panning");
+    canvasStage.setPointerCapture(event.pointerId);
+  });
+  canvasStage.addEventListener("pointermove", event => {
+    if (dragStart?.id !== event.pointerId) return;
+    state.panX = event.clientX - dragStart.x;
+    state.panY = event.clientY - dragStart.y;
+    applyZoomTransform();
+  });
+  canvasStage.addEventListener("lostpointercapture", () => {
+    dragStart = null;
+    canvasStage.classList.remove("panning");
+  });
+
+  editModeBtn.addEventListener("click", () => {
+    commitCurrentNote();
+    state.editing = !state.editing;
+    noteEditor.contentEditable = String(state.editing);
+    editHint.hidden = !state.editing;
+    saveHtmlBtn.hidden = !state.editing;
+    editModeBtn.textContent = state.editing ? "結束編輯" : "編輯解說";
+    editModeBtn.setAttribute("aria-pressed", String(state.editing));
+    if (state.editing) {
+      teacherTools.open = false;
+      noteEditor.focus();
+    }
+  });
+  noteEditor.addEventListener("input", commitCurrentNote);
+
+  saveHtmlBtn.addEventListener("click", () => {
+    commitCurrentNote();
+    const clone = exportTemplate.cloneNode(true);
+    clone.querySelector("#pagesData").textContent = "\n" + JSON.stringify(pages, null, 2).replace(/</g, "\\u003c") + "\n";
+    clone.querySelector("body").dataset.notesEdition = "export-" + Date.now();
+    clone.querySelector("#exportStamp").textContent = "離線互動教材 V2・教師匯出";
+    const blob = new Blob(["<!doctype html>\n" + clone.outerHTML], { type: "text/html;charset=utf-8" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "菊鍊串接電路_V2_匯出.html";
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(link.href), 2000);
+  });
+
+  fullBtn.addEventListener("click", async () => {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await document.documentElement.requestFullscreen();
+    } catch (_) {
+      fullBtn.textContent = "此瀏覽器無法開啟全螢幕";
+    }
+  });
+  document.addEventListener("fullscreenchange", () => {
+    fullBtn.textContent = document.fullscreenElement ? "退出全螢幕" : "全螢幕投影";
+  });
+
+  document.addEventListener("keydown", event => {
+    if (event.defaultPrevented || state.editing || event.altKey || event.ctrlKey || event.metaKey ||
+        document.activeElement.matches("input, select, textarea, [contenteditable='true']")) return;
+    const projection = Boolean(document.fullscreenElement);
+    const key = event.key;
+    if (key === "ArrowRight" || (projection && key === "PageDown")) goToPage(state.pageIndex + 1);
+    else if (key === "ArrowLeft" || (projection && key === "PageUp")) goToPage(state.pageIndex - 1);
+    else if (projection && key === "Home") goToPage(0);
+    else if (projection && key === "End") goToPage(pages.length - 1);
+    else if (key === " " && !playPauseBtn.closest("[hidden]") && (canvasStage.contains(event.target) || (projection && !event.target.closest("button, summary")))) playPauseBtn.click();
+    else if (key.toLowerCase() === "v" && !toggleValuesBtn.closest("[hidden]")) toggleValuesBtn.click();
+    else return;
+    event.preventDefault();
+  });
+
+  const initHash = Number(location.hash.slice(1));
+  setPlaying(!matchMedia("(prefers-reduced-motion: reduce)").matches);
+  goToPage(Number.isInteger(initHash) && initHash >= 1 && initHash <= pages.length ? initHash - 1 : 0, false);
+  requestAnimationFrame(tick);
+
+})();
+</script>
+</body>
+</html>
