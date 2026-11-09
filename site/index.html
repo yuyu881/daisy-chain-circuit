@@ -676,7 +676,7 @@ button[aria-pressed="true"] { color: var(--theme); background: var(--theme-selec
   
     const photo = (x, width, viewBox, label) => `
       <svg x="${x}" y="3" width="${width}" height="120" viewBox="${viewBox}" overflow="hidden">
-        <image href="菊鍊串接電路.jpg" width="3264" height="1766"/>
+        <image href="元件近照.jpg" width="3000" height="4000" preserveAspectRatio="none"/>
       </svg>
       <text x="${x + width / 2}" y="145" text-anchor="middle" font-size="14" font-weight="700">${label}</text>`;
   
@@ -741,8 +741,8 @@ button[aria-pressed="true"] { color: var(--theme); background: var(--theme-selec
     switch (key) {
       case "diode":
         figures = [
-          figure("麵包板局部（暫用）", svg("0 0 300 152", "實拍 D1 黑環在右、D2 黑環在左",
-            photo(2, 144, "385 477 159 89", "D1") + photo(154, 144, "627 681 163 97", "D2")), "D1、D2 取自同一塊麵包板。"),
+          figure("麵包板局部", svg("0 0 300 152", "麵包板上的玻璃二極體與黑環",
+            photo(18, 264, "1500 1150 650 400", "玻璃二極體")), "觀察玻璃外殼及陰極黑環。"),
           figure("二極體放大示意", svg("0 0 320 152", "玻璃二極體，右側黑環標出陰極 K", `
             <defs><linearGradient id="glassBody" x2="0" y2="1"><stop stop-color="#fdd2a7"/><stop offset=".35" stop-color="#dc6e35"/><stop offset=".74" stop-color="#913615"/><stop offset="1" stop-color="#c35f33"/></linearGradient></defs>
             <path d="M25 63H294" stroke="#727e85" stroke-width="5"/>
@@ -760,8 +760,8 @@ button[aria-pressed="true"] { color: var(--theme); background: var(--theme-selec
         break;
       case "led":
         figures = [
-          figure("麵包板局部（暫用）", svg("0 0 300 152", "實拍 LED1 綠燈、LED2 紅燈",
-            photo(2, 144, "201 807 168 202", "LED1 綠") + photo(154, 144, "427 183 178 220", "LED2 紅")), "照片用來定位顏色與安裝位置。"),
+          figure("麵包板局部", svg("0 0 300 152", "麵包板上的綠色與紅色 LED",
+            photo(2, 144, "1110 1910 600 700", "綠色 LED") + photo(154, 144, "1710 300 620 700", "紅色 LED")), "照片用來觀察顏色與安裝位置。"),
           figure("圓頂外殼放大示意", svg("0 0 330 152", "常見圓頂 LED 側視及底視，長腳是 A，短腳及底緣平邊在 K 側", `
             <defs><linearGradient id="ledLens" x2="0" y2="1"><stop stop-color="#d1ebd3"/><stop offset=".5" stop-color="#79af8d"/><stop offset="1" stop-color="#3d7556"/></linearGradient></defs>
             <path d="M94 80V126M125 80V110" stroke="#78838a" stroke-width="5"/>
@@ -781,7 +781,7 @@ button[aria-pressed="true"] { color: var(--theme); background: var(--theme-selec
         break;
       case "resistor":
         figures = [
-          figure("麵包板局部（暫用）", svg("0 0 300 152", "R3 電阻實拍，靠近 D1", photo(18, 264, "295 520 175 90", "R3，靠近 D1")), "裝板後可用鄰近的 D1 辨認 R3。"),
+          figure("麵包板局部", svg("0 0 300 152", "麵包板上的色環電阻", photo(18, 264, "1260 1280 720 420", "色環電阻")), "觀察電阻外形與色環。"),
           figure("四色環放大示意", svg("0 0 324 152", "三支軸向電阻，第三環分別是紅、橙與黃，末環皆是金色", `
             <defs><linearGradient id="resistorCoat" x2="0" y2="1"><stop stop-color="#f2e1bd"/><stop offset=".52" stop-color="#d9bd88"/><stop offset="1" stop-color="#b58e55"/></linearGradient></defs>
             ${resistorBody(9, "#a92932", "1 kΩ")}
@@ -804,8 +804,8 @@ button[aria-pressed="true"] { color: var(--theme); background: var(--theme-selec
         break;
       default:
         figures = [
-          figure("麵包板局部（暫用）", svg("0 0 300 152", "麵包板上的 Q1 與 Q2 電晶體",
-            photo(2, 144, "167 395 155 124", "Q1") + photo(154, 144, "386 670 149 127", "Q2")), "裝板照片可定位外殼。印字與腳序請比對手上的料件。"),
+          figure("麵包板局部", svg("0 0 300 152", "麵包板上的兩顆電晶體",
+            photo(2, 144, "1040 820 650 600", "電晶體") + photo(154, 144, "350 1510 650 600", "電晶體")), "裝板照片可定位外殼。印字與腳序請比對手上的料件。"),
           figure("TO-92 正面放大示意", svg("0 0 286 152", "UTC 9012 與 9013 TO-92 範例，平面朝前、腳朝下，E、B、C 由左至右", `
             <defs><linearGradient id="moldedBody" x2="0" y2="1"><stop stop-color="#484f54"/><stop offset="1" stop-color="#22262a"/></linearGradient></defs>
             ${transistorBody(5, "9012")}${transistorBody(149, "9013")}`), "平面朝向觀看者，三腳朝下。示意印字以型號表示。"),
