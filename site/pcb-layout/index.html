@@ -42,6 +42,13 @@
   .masthead button:focus-visible { outline-color: white; }
   .view-nav, .view-tabs, .tools, .tool-group { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
   .view-nav { flex-wrap: nowrap; white-space: nowrap; }
+  .view-nav .page-link {
+    display: inline-flex; align-items: center; min-height: 32px; padding: 3px 9px;
+    border: 1px solid var(--control-line); border-radius: 7px;
+    color: var(--purple); background: var(--surface); font-size: .9rem; text-decoration: none;
+  }
+  .view-nav .page-link:hover { background: var(--purple-soft); }
+  .view-nav .page-link:focus-visible { outline-color: white; }
   #view-count, #zoom-level { font: 700 .82rem Consolas, monospace; white-space: nowrap; }
   #next-view { background: var(--purple-deep); border-color: var(--purple-selected); color: white; }
   #next-view:hover:not(:disabled) { background: var(--purple); }
@@ -112,7 +119,7 @@
       <button type="button" id="prev-view" title="左方向鍵" disabled>← 上一頁</button>
       <span id="view-count" aria-live="polite">01 / 03</span>
       <button type="button" id="next-view" title="右方向鍵">下一頁 →</button>
-      <a href="../">教學動畫</a>
+      <a class="page-link" href="../">教學動畫</a>
       <button type="button" id="full-view">全螢幕</button>
     </nav>
   </div>

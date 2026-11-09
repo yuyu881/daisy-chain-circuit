@@ -72,6 +72,13 @@ button[aria-pressed="true"] { color: var(--theme); background: var(--theme-selec
 .brand h1 { margin: 0; color: var(--white); font-size: 1.25rem; line-height: 1.35; }
 .top-actions, .tool-group { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; min-width: 0; }
 .top-actions { justify-content: flex-end; font-size: .88rem; }
+.top-actions .page-link {
+  display: inline-flex; align-items: center; min-height: 38px; padding: 5px 12px;
+  border: 1px solid var(--rule); border-radius: 7px;
+  background: var(--white); color: var(--theme); text-decoration: none;
+}
+.top-actions .page-link:hover { background: var(--theme-soft); border-color: var(--theme); }
+.top-actions .page-link:focus-visible { outline-color: var(--white); }
 .teacher-tools { position: relative; }
 .teacher-tools summary { display: list-item; }
 .teacher-menu {
@@ -305,7 +312,7 @@ button[aria-pressed="true"] { color: var(--theme); background: var(--theme-selec
     </nav>
     <div class="top-actions">
       <button type="button" id="toggleMenuBtn" aria-expanded="false" aria-controls="sidebar">單元目錄</button>
-      <a href="./pcb-layout/">電路板 Layout</a>
+      <a class="page-link" href="./pcb-layout/">電路板 Layout</a>
       <button type="button" id="fullBtn">全螢幕投影</button>
       <details id="teacherTools" class="teacher-tools">
         <summary>教師工具</summary>
